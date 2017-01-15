@@ -42,7 +42,6 @@ namespace Controller
         iter = this->messages.begin();
         while (this->is_running && iter != this->messages.end())
         {
-            iter++;
             if ((*iter)[0] == "d_string")
             {
                 nb = Crafter::d_string(*iter, this->packet + tb, PKTMAX - tb);
@@ -56,6 +55,7 @@ namespace Controller
             }
 
             tb += nb;
+            iter++;
         }
     }
     
