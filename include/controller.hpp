@@ -8,6 +8,7 @@
 #define _CONTROLLER_HPP
 
 #include <thread>
+#include <map>
 #include "parse.hpp"
 #include "base.hpp"
 #include "craft.hpp"
@@ -31,8 +32,6 @@ namespace Controller
             shared_ptr<std::thread> ctl_thr;
             std::vector<std::vector<std::string>> messages;
             uint8_t *packet;
-        
-        
     };
 }
 

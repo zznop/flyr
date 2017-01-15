@@ -15,7 +15,7 @@
 namespace Crafter
 {
     std::size_t d_string(std::vector<std::string> params, uint8_t *buffer, std::size_t max);
-    std::size_t d_clear(uint8_t *buffer, std::size_t n);
+    void d_clear(uint8_t *buffer, std::size_t n);
 }
 
 #endif

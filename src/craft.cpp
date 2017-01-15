@@ -20,9 +20,9 @@ namespace Crafter
     }
 
     /// zeroize the packet buffer
-    std::size_t d_clear(uint8_t *buffer, std::size_t n)
+    void d_clear(uint8_t *buffer, std::size_t n)
     {
-        std::memset(buffer, '\0', n);
+        if (buffer != NULL)
+            std::memset(buffer, '\0', n);
     }
-
 }

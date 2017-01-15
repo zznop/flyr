@@ -36,9 +36,26 @@ namespace Controller
     /// run DudleyController thread
     void DudleyController::run()
     {
-        while (this->is_running)
+        size_t tb = 0;
+        size_t nb;
+        std::vector<std::vector<std::string>>::iterator iter;
+        iter = this->messages.begin();
+        while (this->is_running && iter != this->messages.end())
         {
+            iter++;
+            if ((*iter)[0] == "d_string")
+            {
+                nb = Crafter::d_string(*iter, this->packet + tb, PKTMAX - tb);
+                if (nb == 0)
+                    ERRPRINT("packet overflow detected");
+            }
+            else if ((*iter)[0] == "d_clear")
+            {
+                Crafter::d_clear(this->packet, PKTMAX);
+                tb = 0;
+            }
 
+            tb += nb;
         }
     }
     
