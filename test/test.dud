@@ -1,0 +1,3 @@
+(d_string "hello\r\n") ;; this is a test
+(d_string_repeat "A" 4096)
+(d_string_variable "derp")
