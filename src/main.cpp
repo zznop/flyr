@@ -108,8 +108,10 @@ int main (int argc, char **argv)
         return 1;
     }
 
-    while (is_alive)
+    DBGPRINT("starting fuzzing scenario");
+    while (is_alive && controller.is_running())
     {
+        //TODO add logic for interfacing with debugger attached to target pid
         sleep(1);
     }
 

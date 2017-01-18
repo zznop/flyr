@@ -23,11 +23,12 @@ namespace Controller
             STATUS start();
             STATUS stop();
             STATUS restart();
+            bool is_running();
             void join();
         
         private:
             void run();
-            bool is_running;
+            bool running;
             shared_ptr<Parser::DudleyParser> parser;
             shared_ptr<std::thread> ctl_thr;
             std::vector<std::vector<std::string>> messages;

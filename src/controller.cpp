@@ -11,7 +11,7 @@ namespace Controller
     /// DudleyController object constructor
     DudleyController::DudleyController(shared_ptr<Parser::DudleyParser> parser)
     {
-        is_running = false;
+        running = false;
         this->parser = parser;
     }
     
@@ -27,7 +27,7 @@ namespace Controller
         if (this->parser->parse(this->messages) == STATUS::ERROR)
             return STATUS::ERROR;
 
-        this->is_running = true;
+        this->running = true;
         this->packet = (uint8_t *)calloc(PKTMAX, sizeof(uint8_t));
         this->ctl_thr = make_shared<std::thread>(&DudleyController::run, this);
         return STATUS::GOOD;
@@ -40,36 +40,49 @@ namespace Controller
         size_t nb;
         std::vector<std::vector<std::string>>::iterator iter;
         iter = this->messages.begin();
-        while (this->is_running && iter != this->messages.end())
+        while (this->running && iter != this->messages.end())
         {
             if ((*iter)[0] == "d_string")
             {
                 nb = Crafter::d_string(*iter, this->packet + tb, PKTMAX - tb);
                 if (nb == 0)
                     ERRPRINT("packet overflow detected");
+                tb += nb;
+            }
+            else if ((*iter)[0] == "d_string_repeat")
+            {
+                nb = Crafter::d_string_repeat(*iter, this->packet + tb, PKTMAX - tb);
+                if (nb == 0)
+                    ERRPRINT("packet overflow detected");
+                tb += nb;
             }
             else if ((*iter)[0] == "d_clear")
             {
                 Crafter::d_clear(this->packet, PKTMAX);
                 tb = 0;
             }
+            else if ((*iter)[0] == "d_hexdump")
+            {
+                Crafter::d_hexdump(this->packet, tb);
+            }
 
-            tb += nb;
             iter++;
         }
+
+        this->running = false;
     }
     
     /// stop run
     STATUS DudleyController::stop()
     {
-        if (is_running)
-            is_running = false;
+        if (this->running)
+            this->running = false;
     }
     
     /// restart run
     STATUS DudleyController::restart()
     {
-        if (is_running)
+        if (this->running)
         {
             DudleyController::stop();
             DudleyController::start();
@@ -80,9 +93,16 @@ namespace Controller
         return STATUS::GOOD;
     }
 
+    /// return information to the main thread on whether or not the fuzzer is still running
+    bool DudleyController::is_running()
+    {
+        return this->running;
+    }
+
+    /// join thread and free the packet buffer
     void DudleyController::join()
     {
-        this->is_running = false;
+        this->running = false;
         if (this->packet != NULL)
             free(this->packet);
 
