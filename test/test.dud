@@ -1,10 +1,13 @@
 (d_string "hello\r\n") ;; this is a test
 (d_hexdump)
+(d_send)
 (d_clear)
 (d_string_repeat "A" 1024)
 (d_hexdump)
+(d_send)
 (d_clear)
 (d_string "goodbye\r\n")
 (d_hexdump)
+(d_send)
 (d_clear)
 ;;(d_string_variable "derp")

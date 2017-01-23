@@ -189,6 +189,11 @@ namespace Parser
             if (sv.size() != 1)
                 return STATUS::ERROR;
         }
+        else if (sv[0] == "d_send")
+        {
+            if (sv.size() != 1)
+                return STATUS::ERROR;
+        }
         else
         {
             return STATUS::ERROR;

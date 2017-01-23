@@ -9,9 +9,11 @@
 namespace Controller
 {
     /// DudleyController object constructor
-    DudleyController::DudleyController(shared_ptr<Parser::DudleyParser> parser)
+    DudleyController::DudleyController(shared_ptr<Parser::DudleyParser> parser,
+                                       shared_ptr<Networking::IPConnection> conn)
     {
         running = false;
+        this->conn = conn;
         this->parser = parser;
     }
     
@@ -55,6 +57,7 @@ namespace Controller
                 if (nb == 0)
                     ERRPRINT("packet overflow detected");
                 tb += nb;
+
             }
             else if ((*iter)[0] == "d_clear")
             {
@@ -64,6 +67,14 @@ namespace Controller
             else if ((*iter)[0] == "d_hexdump")
             {
                 Crafter::d_hexdump(this->packet, tb);
+            }
+            else if ((*iter)[0] == "d_send")
+            {
+                if (this->conn->send_data(this->packet, tb) != STATUS::GOOD)
+                {
+                    ERRPRINT("failed to send data - check for crash");
+                    break;
+                }
             }
 
             iter++;

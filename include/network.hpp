@@ -16,15 +16,30 @@
 
 namespace Networking
 {
-    class UDPConnection
+    enum CONNTYPE
+    {
+        TCP,
+        UDP,
+        SERIAL
+    };
+
+    class IPConnection
     {
         public:
-            UDPConnection(std::string rhost, int port);
-            ~UDPConnection();
-    
-        private:
+            IPConnection(std::string rhost, uint16_t port, std::string conn_type);
+            ~IPConnection();
+            STATUS send_data(uint8_t *buffer, size_t n);
+            ssize_t recv_data(uint8_t *buffer, size_t bufsize);
+            bool is_good();
+            void close_conn();
+
+
+    private:
+            void init_udp(std::string rhost, uint16_t port);
+            CONNTYPE conn_type;
             int sock;
             struct sockaddr_in saddr;
+            bool good;
     };
 }
 
