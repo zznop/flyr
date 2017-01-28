@@ -10,6 +10,7 @@
 #include "base.hpp"
 #include <fstream>
 #include <regex>
+#include <locale>
 
 namespace Parser
 {
@@ -24,17 +25,15 @@ namespace Parser
         private:
             void trim_whitespace(std::string &s);
             void trim_comments(std::string &s);
+            std::vector<std::string> split_func(std::string s);
             STATUS parse_func(string &s, std::vector<std::vector<std::string>> &msgs);
             STATUS check_func(std::vector<std::string> &sv);
-            
             bool is_string(std::string &s);
             bool good_quotes(std::string &s);
             bool is_integer(std::string &s);
             STATUS check_d_string(std::vector<std::string> &sv);
             STATUS check_d_string_repeat(std::vector<std::string> &sv);
-
-
-
+            STATUS check_d_binary(std::vector<std::string> &sv);
             shared_ptr<std::ifstream> infile;
     };
 }

@@ -76,6 +76,13 @@ namespace Controller
                     break;
                 }
             }
+            else if ((*iter)[0] == "d_binary")
+            {
+                nb = Crafter::d_binary(*iter, this->packet + tb, PKTMAX - tb);
+                if (nb == 0)
+                    ERRPRINT("packet overflow detected");
+                tb += nb;
+            }
 
             iter++;
         }

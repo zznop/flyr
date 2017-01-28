@@ -73,10 +73,10 @@ namespace Parser
             return STATUS::ERROR;
         }
 
-        DBGPRINT("COMMAND: " + sv[0] + " ARG1: " + sv[1]);
         return STATUS::GOOD;
     }
-    
+
+    /// validate types can be converted for d_string_repeat
     STATUS DudleyParser::check_d_string_repeat(std::vector<std::string> &sv)
     {
         if (!DudleyParser::is_string(sv[1]))
@@ -91,7 +91,39 @@ namespace Parser
             return STATUS::ERROR;
         }
         
-        DBGPRINT("COMMAND: " + sv[0] + " ARG1: " + sv[1] + " ARG2: " + sv[2]);
+        return STATUS::GOOD;
+    }
+
+    /// check if hex string is valid
+    STATUS DudleyParser::check_d_binary(std::vector<std::string> &sv)
+    {
+        if (!DudleyParser::is_string(sv[1]))
+        {
+            ERRPRINT("first argument for d_binary is invalid: " + sv[1]);
+            return STATUS::ERROR;
+        }
+
+        sv[1].erase(std::remove(sv[1].begin(), sv[1].end(), '"'), sv[1].end());
+        std::cout << sv[1] << std::endl;
+
+        std::istringstream hexstr(sv[1]);
+        std::vector<std::string> bytestrs;
+        std::copy(std::istream_iterator<std::string>(hexstr),
+                  std::istream_iterator<std::string>(),
+                  std::back_inserter(bytestrs));
+
+        std::vector<std::string>::const_iterator bytestr;
+        for (bytestr = bytestrs.begin(); bytestr != bytestrs.end(); ++bytestr)
+        {
+            std::cout << "test" << std::endl;
+            if ((*bytestr).size() != 2)
+                return STATUS::ERROR;
+
+            std::locale loc;
+            if (!std::isxdigit((*bytestr)[0], loc))
+                return STATUS::ERROR;
+        }
+
         return STATUS::GOOD;
     }
     
@@ -153,6 +185,8 @@ namespace Parser
         {
             if (sv.size() != 2)
                 return STATUS::ERROR;
+            else
+                return DudleyParser::check_d_binary(sv);
         }
         else if (sv[0] == "d_binary_repeat")
         {
@@ -201,6 +235,45 @@ namespace Parser
         
         return STATUS::GOOD;
     }
+
+    /// split function by whitespace except in quotes
+    std::vector<std::string> DudleyParser::split_func(std::string s)
+    {
+        std::vector<std::string> params;
+        std::string element = "";
+        int i;
+        bool quoted = false;
+        for (i = 0; i < s.size(); i++)
+        {
+            if (s[i] == '"' && !quoted)
+            {
+                quoted = true;
+            }
+            else if (s[i] == '"' && quoted)
+            {
+                if (!(i > 0 && s[i - 1] == '\\'))
+                {
+                    quoted = false;
+                }
+            }
+
+            if (s[i] == ' ' && !quoted)
+            {
+                if (!element.empty())
+                {
+                    std::cout << element << std::endl;
+                    params.push_back(element);
+                    element = "";
+                    continue;
+                }
+            }
+
+            element += s[i];
+        }
+
+        params.push_back(element);
+        return params;
+    }
     
     /// split the function and parameters
     STATUS DudleyParser::parse_func(std::string &s, std::vector<std::vector<std::string>> &msgs)
@@ -214,16 +287,10 @@ namespace Parser
         p = s.find_last_of(")");
         if (p == std::string::npos)
             return STATUS::ERROR;
-        
+
         s.erase(p, s.size());
-        
-        std::istringstream buffer(s);
-        std::vector<std::string> elements;
-    
-        std::copy(std::istream_iterator<std::string>(buffer), 
-                  std::istream_iterator<std::string>(),
-                  std::back_inserter(elements));
-                
+
+        std::vector<std::string> elements = DudleyParser::split_func(s);
         if (DudleyParser::check_func(elements) == STATUS::GOOD)
         {
             msgs.push_back(elements);

@@ -107,4 +107,29 @@ namespace Crafter
             idx++;
         }
     }
+
+    /// pack binary data into buffer
+    size_t d_binary(std::vector<std::string> params, uint8_t *buffer, std::size_t max)
+    {
+        std::istringstream hexstr(params[1]);
+        std::vector<std::string> bytestrs;
+        std::copy(std::istream_iterator<std::string>(hexstr),
+            std::istream_iterator<std::string>(),
+            std::back_inserter(bytestrs));
+
+        if (bytestrs.size() > max)
+            return 0;
+
+        std::vector<std::string>::const_iterator bytestr;
+        uint8_t byte;
+        size_t i = 0;
+        for (bytestr = bytestrs.begin(); bytestr != bytestrs.end(); ++bytestr)
+        {
+            uint8_t byte = (uint8_t)strtol((*bytestr).c_str(), NULL, 16);
+            buffer[i] = byte;
+            i++;
+        }
+
+        return i;
+    }
 }
