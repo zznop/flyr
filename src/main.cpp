@@ -11,6 +11,7 @@ static bool is_alive = true;
 /// handle signal interrupts
 static void signal_handler(int interrupt)
 {
+    (void)interrupt;
     is_alive = false;
 }
 
@@ -22,6 +23,7 @@ static void print_usage(void)
     std::cout << "-u         fuzz using UDP protocol (if not set TCP will be used)" << std::endl;
     std::cout << "-i IP      target service host address" << std::endl;
     std::cout << "-p PORT    target service port" << std::endl;
+    std::cout << "-t SECS    send and receive timeout in seconds" << std::endl;
     std::cout << "-f FILE    path to Dudley fuzz file" << std::endl;
 }
  
@@ -31,7 +33,7 @@ int main (int argc, char **argv)
     signal(SIGINT, signal_handler);
     std::string host;
     std::string filepath;
-    int opt, port;
+    int opt, port, time_out_secs = 3;
     std::string conn_type = "tcp";
     
     if (argc < 2)
@@ -40,7 +42,7 @@ int main (int argc, char **argv)
         return 1;
     }
     
-    while ((opt = getopt(argc, argv, "hc:i:p:f:")) != -1)
+    while ((opt = getopt(argc, argv, "hc:i:p:f:t:")) != -1)
     {
         switch (opt)
         {
@@ -59,6 +61,10 @@ int main (int argc, char **argv)
             case 'p':
                 port = std::stoi(optarg);
                 break;
+
+            case 't':
+                time_out_secs = std::stoi(optarg);
+                break;
                 
             case 'f':
                 filepath = optarg;
@@ -76,7 +82,8 @@ int main (int argc, char **argv)
     }
 
     // set up connection
-    shared_ptr<Networking::IPConnection> conn = make_shared<Networking::IPConnection>(host, port, conn_type);
+    shared_ptr<Networking::IPConnection> conn =
+            make_shared<Networking::IPConnection>(host, port, conn_type, time_out_secs);
     if (!conn->is_good())
     {
         conn->close_conn();

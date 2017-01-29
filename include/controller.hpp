@@ -23,7 +23,7 @@ namespace Controller
                              shared_ptr<Networking::IPConnection> conn);
             ~DudleyController();
             STATUS start();
-            STATUS stop();
+            void stop();
             STATUS restart();
             bool is_running();
             void join();

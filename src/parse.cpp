@@ -45,18 +45,12 @@ namespace Parser
     {
         if (s.front() == '"' && s.back() == '"')
         {
-            if (!good_quotes(s))
-                return false;
-                
-            return true;
+            return good_quotes(s);
         }
         else if (s.front() == '\'' && s.back() == '\'')
         {
-            size_t n = std::count(s.begin(), s.end(), '\'');
-            if (n != 2)
-                return false;
-                
-            return true;
+            int64_t n = std::count(s.begin(), s.end(), '\'');
+            return n == 2;
         }
         else
         {
@@ -104,8 +98,6 @@ namespace Parser
         }
 
         sv[1].erase(std::remove(sv[1].begin(), sv[1].end(), '"'), sv[1].end());
-        std::cout << sv[1] << std::endl;
-
         std::istringstream hexstr(sv[1]);
         std::vector<std::string> bytestrs;
         std::copy(std::istream_iterator<std::string>(hexstr),
@@ -115,7 +107,6 @@ namespace Parser
         std::vector<std::string>::const_iterator bytestr;
         for (bytestr = bytestrs.begin(); bytestr != bytestrs.end(); ++bytestr)
         {
-            std::cout << "test" << std::endl;
             if ((*bytestr).size() != 2)
                 return STATUS::ERROR;
 
@@ -261,7 +252,6 @@ namespace Parser
             {
                 if (!element.empty())
                 {
-                    std::cout << element << std::endl;
                     params.push_back(element);
                     element = "";
                     continue;

@@ -71,10 +71,7 @@ namespace Controller
             else if ((*iter)[0] == "d_send")
             {
                 if (this->conn->send_data(this->packet, tb) != STATUS::GOOD)
-                {
-                    ERRPRINT("failed to send data - check for crash");
                     break;
-                }
             }
             else if ((*iter)[0] == "d_binary")
             {
@@ -91,7 +88,7 @@ namespace Controller
     }
     
     /// stop run
-    STATUS DudleyController::stop()
+    void DudleyController::stop()
     {
         if (this->running)
             this->running = false;
