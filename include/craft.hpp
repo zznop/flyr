@@ -21,6 +21,9 @@ namespace Crafter
     void d_clear(uint8_t *buffer, std::size_t n);
     void d_hexdump(uint8_t *buffer, size_t n);
     size_t d_binary(std::vector<std::string> params, uint8_t *buffer, std::size_t max);
+    std::size_t d_binary_repeat(std::vector<std::string> params, uint8_t *buffer, std::size_t max);
+    void d_clear(uint8_t *buffer, std::size_t n);
+    void d_hexdump(uint8_t *buffer, size_t n);
 }
 
 #endif

@@ -66,7 +66,8 @@ namespace Crafter
         std::size_t n = 0;
         int i, repcnt;
 
-        if (buffer == NULL || params[1].size() >= max)
+        repcnt = std::stoi(params[2]);
+        if (buffer == NULL || (params[1].size() - 2) * repcnt >= max)
             return 0;
 
         repcnt = std::stoi(params[2]);
@@ -74,6 +75,63 @@ namespace Crafter
         {
             std::memcpy(buffer + n, params[1].c_str() + 1, params[1].size() - 2);
             n += params[1].size() - 2;
+        }
+
+        return n;
+    }
+
+    /// pack binary data into buffer
+    size_t d_binary(std::vector<std::string> params, uint8_t *buffer, std::size_t max)
+    {
+        std::istringstream hexstr(params[1]);
+        std::vector<std::string> bytestrs;
+        std::copy(std::istream_iterator<std::string>(hexstr),
+            std::istream_iterator<std::string>(),
+            std::back_inserter(bytestrs));
+
+        if (bytestrs.size() > max)
+            return 0;
+
+        std::vector<std::string>::const_iterator bytestr;
+        uint8_t byte;
+        size_t i = 0;
+        for (bytestr = bytestrs.begin(); bytestr != bytestrs.end(); ++bytestr)
+        {
+            byte = (uint8_t)strtol((*bytestr).c_str(), NULL, 16);
+            buffer[i] = byte;
+            i++;
+        }
+
+        return i;
+    }
+
+    /// repeatedly concatenate and pack binary string into buffer
+    std::size_t d_binary_repeat(std::vector<std::string> params, uint8_t *buffer, std::size_t max)
+    {
+        std::istringstream hexstr(params[1]);
+        std::size_t n = 0;
+        int i, repcnt;
+        uint8_t byte;
+
+        std::vector<std::string> bytestrs;
+        std::copy(std::istream_iterator<std::string>(hexstr),
+            std::istream_iterator<std::string>(),
+            std::back_inserter(bytestrs));
+
+
+        repcnt = stoi(params[2]);
+        if (buffer == NULL || bytestrs.size() * repcnt >= max)
+            return 0;
+
+        for (i = 0; i < repcnt; i++)
+        {
+            std::vector<std::string>::const_iterator bytestr;
+            for (bytestr = bytestrs.begin(); bytestr != bytestrs.end(); ++bytestr)
+            {
+                byte = (uint8_t)strtol((*bytestr).c_str(), NULL, 16);
+                buffer[n] = byte;
+                n++;
+            }
         }
 
         return n;
@@ -106,30 +164,5 @@ namespace Crafter
             lnb++;
             idx++;
         }
-    }
-
-    /// pack binary data into buffer
-    size_t d_binary(std::vector<std::string> params, uint8_t *buffer, std::size_t max)
-    {
-        std::istringstream hexstr(params[1]);
-        std::vector<std::string> bytestrs;
-        std::copy(std::istream_iterator<std::string>(hexstr),
-            std::istream_iterator<std::string>(),
-            std::back_inserter(bytestrs));
-
-        if (bytestrs.size() > max)
-            return 0;
-
-        std::vector<std::string>::const_iterator bytestr;
-        uint8_t byte;
-        size_t i = 0;
-        for (bytestr = bytestrs.begin(); bytestr != bytestrs.end(); ++bytestr)
-        {
-            uint8_t byte = (uint8_t)strtol((*bytestr).c_str(), NULL, 16);
-            buffer[i] = byte;
-            i++;
-        }
-
-        return i;
     }
 }

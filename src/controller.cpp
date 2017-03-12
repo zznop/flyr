@@ -80,6 +80,13 @@ namespace Controller
                     ERRPRINT("packet overflow detected");
                 tb += nb;
             }
+            else if ((*iter)[0] == "d_binary_repeat")
+            {
+                nb = Crafter::d_binary_repeat(*iter, this->packet + tb, PKTMAX - tb);
+                if (nb == 0)
+                    ERRPRINT("packet overflow detected");
+                tb += nb;
+            }
 
             iter++;
         }
