@@ -120,7 +120,7 @@ namespace Crafter
 
 
         repcnt = stoi(params[2]);
-        if (buffer == NULL || bytestrs.size() * repcnt >= max)
+        if (buffer == NULL || (bytestrs.size() - 2) * repcnt >= max)
             return 0;
 
         for (i = 0; i < repcnt; i++)

@@ -14,7 +14,7 @@
 (d_hexdump)
 (d_send)
 (d_clear)
-(d_binary_repeat "fe ed fa ce", 16)
+(d_binary_repeat "fe ed fa ce" 16)
 (d_hexdump)
 (d_send)
 (d_clear)
