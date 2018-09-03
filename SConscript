@@ -1,4 +1,13 @@
 Import('env')
 
-dudley = env.Program('$SRCDIR/main.c')
+sources = [
+    '$SRCDIR/main.c',
+    '$SRCDIR/utils.c',
+]
+
+dudley = env.Program(
+    'dudley',
+    source = sources,
+)
+
 Return('dudley')
