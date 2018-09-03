@@ -4,6 +4,7 @@
 
 #include "utils.h"
 #include "main.h"
+#include "controller.h"
 
 /**
  * Display command-line interface usage
@@ -49,6 +50,5 @@ int main(int argc, char **argv)
         return FAILURE;
     }
 
-    printf("%s\n", filepath);
-    return SUCCESS;
+    return parse_dudley_file(filepath);
 }

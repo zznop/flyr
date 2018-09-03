@@ -6,6 +6,7 @@ base_env = Environment(
         '-Wall',
         '-Wextra',
         '-Werror',
+        '-std=c99',
     ],
 )
 
