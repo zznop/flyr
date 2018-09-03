@@ -18,9 +18,6 @@ static void print_help(void)
 
 /**
  * Parse arguments and execute a dudley file
- * @param argc CLI arguments count
- * @param argv CLI arguments array
- * @return SUCCESS(0) or FAILURE(1)
  */
 int main(int argc, char **argv)
 {

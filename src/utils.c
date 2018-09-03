@@ -7,9 +7,6 @@
 
 /**
  * Writes formatted strings to file descriptors
- * @param out File descriptor to write to
- * @param prefix Delimiter to prefix message with
- * @param fmt Formatted output
  */
 static void dudwrite(FILE *out, const char prefix, const char *fmt, ...)
 {
@@ -24,7 +21,6 @@ static void dudwrite(FILE *out, const char prefix, const char *fmt, ...)
 
 /**
  * Print a dudley info message to stdout
- * @param fmt Format string
  */
 void dudinfo(const char *fmt, ...)
 {
@@ -33,7 +29,6 @@ void dudinfo(const char *fmt, ...)
 
 /**
  * Print a dudley error message to stdout
- * @param fmt Format string
  */
 void duderr(const char *fmt, ...)
 {
