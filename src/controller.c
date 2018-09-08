@@ -36,8 +36,7 @@ static int _consume_inline_data(struct json_value_t *json_input_value)
     }
 
     // Ensure the input is a hex string
-	if (hexstr[strspn(hexstr, "0123456789abcdefABCDEF")])
-	{
+	if (hexstr[strspn(hexstr, "0123456789abcdefABCDEF")]) {
 		duderr("input data is not a valid hex string");
 		return FAILURE;
 	}
