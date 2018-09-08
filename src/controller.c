@@ -36,12 +36,12 @@ static int _consume_inline_data(struct json_value_t *json_input_value)
     }
 
     // Ensure the input is a hex string
-	if (hexstr[strspn(hexstr, "0123456789abcdefABCDEF")]) {
-		duderr("input data is not a valid hex string");
-		return FAILURE;
-	}
+    if (hexstr[strspn(hexstr, "0123456789abcdefABCDEF")]) {
+        duderr("input data is not a valid hex string");
+        return FAILURE;
+    }
 
-	// Allocate the raw data buffer
+    // Allocate the raw data buffer
     data_size = strlen(hexstr) / 2;
     _raw_data = (uint8_t *)malloc(data_size);
     if (!_raw_data) {
@@ -49,7 +49,7 @@ static int _consume_inline_data(struct json_value_t *json_input_value)
         return FAILURE;
     }
 
-	// Convert the hex string to a byte array and copy
+    // Convert the hex string to a byte array and copy
     pos = hexstr;
     for (i = 0; i < data_size; i++) {
         sscanf(pos, "%2hhx", &_raw_data[i]);
@@ -89,7 +89,7 @@ static int _consume_input(void)
             goto done;
         }
 
-		dudinfo("%lu bytes of input data has been consumed", _raw_data_size);
+        dudinfo("%lu bytes of input data has been consumed", _raw_data_size);
     } else {
         duderr("unsupported input method: %s", method);
         goto done;
