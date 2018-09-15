@@ -37,5 +37,6 @@ typedef struct {
 
 dud_t *dudley_load_file(const char *filepath);
 void dudley_destroy(dud_t *ctx);
+int dudley_iterate_actions(dud_t *ctx);
 
 #endif
