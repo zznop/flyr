@@ -6,22 +6,36 @@
 #include <stdint.h>
 #include "parson/parson.h"
 
-int parse_dudley_file(const char *filepath);
-
 enum output_method {
     OUTPUT_UNSPECIFIED = 0,
     OUTPUT_FILEOUT
 };
 
-struct output_params {
+struct output_handler {
     enum output_method method;
-    struct json_value_t *json_output_value;
-    struct file_out_params *params;
+    struct json_value_t *json_value;
+    struct output_params *params;
 };
 
-struct file_out_params {
+struct output_params {
     const char *directory_path;
     const char *name_suffix;
 };
+
+struct actions_handler {
+    struct json_value_t *json_value;
+    size_t num_actions;
+    size_t idx;
+};
+
+typedef struct {
+    const char *name;
+    struct json_value_t *json_root;
+    struct actions_handler *actions;
+    struct output_handler *output;
+} dud_t;
+
+dud_t *dudley_load_file(const char *filepath);
+void dudley_destroy(dud_t *ctx);
 
 #endif

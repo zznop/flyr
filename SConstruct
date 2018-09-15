@@ -15,6 +15,9 @@ envs = []
 debug_env = base_env.Clone()
 debug_env.Append(
     MODE = 'debug',
+    CCFLAGS = [
+        '-ggdb3',
+    ],
 )
 
 envs.append(debug_env)

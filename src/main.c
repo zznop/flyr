@@ -24,6 +24,7 @@ int main(int argc, char **argv)
 {
     int opt = 0;
     char *filepath = NULL;
+    dud_t *ctx = NULL;
 
     if (argc < 2) {
         print_help();
@@ -50,5 +51,19 @@ int main(int argc, char **argv)
         return FAILURE;
     }
 
-    return parse_dudley_file(filepath);
+    ctx = dudley_load_file(filepath);
+    if (!ctx) {
+        return FAILURE;
+    }
+
+    printf("   -- name   : %s\n", ctx->name);
+    printf("   -- output :\n");
+    printf("     directory path : %s\n", ctx->output->params->directory_path);
+    printf("     name suffix    : %s\n", ctx->output->params->name_suffix);
+    printf("   -- actions :\n");
+    printf("     # of actions : %lu\n", ctx->actions->num_actions);
+
+    dudley_destroy(ctx);
+
+    return SUCCESS;
 }

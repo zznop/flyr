@@ -6,28 +6,9 @@
 #include "controller.h"
 
 /**
- * Root value of the dudley JSON file
- */
-static struct json_value_t *_json_root_value = NULL;
-
-/**
- * Raw data buffer consumed from JSON "input" method
- */
-static uint8_t *_raw_data = NULL;
-
-/**
- * Size of raw data buffer
- */
-static size_t _raw_data_size = 0;
-
-/**
- * Output parameters
- */
-static struct output_params *_output_params;
-
-/**
  * Read the inline hex string from the file and write it to _raw_data as a bytearray
  */
+ /*
 static int _consume_inline_data(struct json_value_t *json_input_value)
 {
     size_t data_size = 0;
@@ -62,11 +43,12 @@ static int _consume_inline_data(struct json_value_t *json_input_value)
     }
 
     return SUCCESS;
-}
+}*/
 
 /**
  * Parse input value and set data based on parameters
  */
+ /*
 static int _set_input_params(void)
 {
     struct json_value_t *json_input_value = NULL;
@@ -105,140 +87,215 @@ done:
     }
 
     return ret;
+}*/
+
+/**
+ * Initializes the actions handler
+ */
+static struct actions_handler *_init_actions_handler(struct json_value_t *json_root)
+{
+    struct actions_handler *actions = (struct actions_handler *)malloc(sizeof(struct actions_handler));
+    if (!actions) {
+        duderr("Out of memory");
+        return NULL;
+    }
+
+    actions->json_value = json_object_get_value(json_object(json_root), "actions");
+    if (!actions->json_value) {
+        duderr("Failed to retrieve \"actions\" JSON value");
+        return NULL;
+    }
+
+    actions->num_actions = json_object_get_count(json_object(actions->json_value));
+    if (!actions->num_actions) {
+        duderr("Failed to retrieve number of actions \"num-actions\"");
+        return NULL;
+    }
+
+    actions->idx = 0;
+
+    return actions;
 }
 
 /**
  * Parse file output parameters and set _output_params to use them
  */
-static int _set_file_out_params(struct json_value_t *json_output_value)
+static struct output_handler *_set_output_params(struct json_value_t *json_output_value)
 {
+    struct output_handler *output = NULL;
     const char *directory_path = NULL;
     const char *name_suffix = NULL;
-    struct file_out_params *fout_params = NULL;
+    struct output_params *fout_params = NULL;
 
-    directory_path = json_object_get_string(json_object(json_output_value), "directory-path");
+    directory_path = json_object_get_string(
+            json_object(json_output_value), "directory-path");
     if (!directory_path) {
         duderr("Export directory path not supplied: \"directory-path\"");
-        return FAILURE;
+        goto fail;
     }
 
-    name_suffix = json_object_get_string(json_object(json_output_value), "name-suffix");
+    name_suffix = json_object_get_string(
+            json_object(json_output_value), "name-suffix");
     if (!name_suffix) {
         duderr("Name suffix for exported files not supplied: \"name-suffix\"");
-        return FAILURE;
+        goto fail;
     }
 
-    fout_params = (struct file_out_params *)malloc(sizeof(struct file_out_params));
+    fout_params = (struct output_params *)malloc(sizeof(struct output_params));
     if (!fout_params) {
+        duderr("Out of memory");
         goto fail;
     }
 
     fout_params->directory_path = directory_path;
     fout_params->name_suffix = name_suffix;
 
-    _output_params = (struct output_params *)malloc(sizeof(struct output_params));
-    if (!_output_params) {
+    output = (struct output_handler *)malloc(sizeof(struct output_handler));
+    if (!output) {
+        duderr("Out of memory");
         goto fail;
     }
 
-    _output_params->method = OUTPUT_FILEOUT;
-    _output_params->json_output_value = json_output_value;
-    _output_params->params = fout_params;
+    output->method = OUTPUT_FILEOUT;
+    output->json_value = json_output_value;
+    output->params = fout_params;
 
-    return SUCCESS;
-
+    return output;
 fail:
     duderr("Out of memory");
     if (fout_params) {
         free(fout_params);
     }
 
-    return FAILURE;
+    if (output) {
+        free(output);
+        output = NULL;
+    }
+
+    return NULL;
 }
 
 /**
- * Parse output method from JSON file and set parameters
+ * Parse output parameters from JSON file and set parameters
  */
-static int _set_output_params(void)
+static struct output_handler *_init_output_handler(struct json_value_t *json_root)
 {
+    struct output_handler *output = NULL;
     struct json_value_t *json_output_value = NULL;
     const char *method = NULL;
 
-    if (_json_root_value == NULL) {
-        return FAILURE;
-    }
-
-    json_output_value = json_object_get_value(json_object(_json_root_value), "output");
+    json_output_value = json_object_get_value(json_object(json_root), "output");
     if (!json_output_value) {
         duderr("failed to parse JSON output value");
-        return FAILURE;
+        return NULL;
     }
 
     method = json_object_get_string(json_object(json_output_value), "method");
     if (!method) {
         duderr("output method was not specified");
-        return FAILURE;
+        return NULL;
     }
 
     if (!strcmp(method, "file-out")) {
-       if (_set_file_out_params(json_output_value)) {
-           return FAILURE;
-       } 
-
-       dudinfo("output parameters set to export files of suffix %s to directory path %s",
-              _output_params->params->name_suffix, _output_params->params->directory_path);
+        output = _set_output_params(json_output_value);
     } else {
         duderr("unsupported export method: %s", method);
-        return FAILURE;
+        return NULL;
     }
 
-    return SUCCESS;
+    return output;
+}
+
+/**
+ * Cleanup dudley context
+ */
+void dudley_destroy(dud_t *ctx)
+{
+    if (ctx->actions) {
+        if (ctx->actions->json_value) {
+            json_value_free(ctx->actions->json_value);
+        }
+
+        free(ctx->actions);
+    }
+
+    if (ctx->output) {
+        if (ctx->output->json_value) {
+            json_value_free(ctx->output->json_value);
+        }
+
+        if (ctx->output->params) {
+            free(ctx->output->params);
+        }
+
+        free(ctx->output);
+    }
+
+    if (ctx->json_root) {
+        json_value_free(ctx->json_root);
+    }
+
+    free(ctx);
+    ctx = NULL;
 }
 
 /**
  * Parse dudley JSON file and validate the schema
  */
-int parse_dudley_file(const char *filepath)
+dud_t *dudley_load_file(const char *filepath)
 {
-    int ret = FAILURE;
     const char *name = NULL;
+    struct json_value_t *json_root = NULL;
+    struct output_handler *output = NULL;
+    struct actions_handler *actions = NULL;
+    dud_t *ctx = NULL;
     struct json_value_t *schema = json_parse_string(
         "{"
             "\"name\":\"\","
-            "\"input\": {},"
             "\"output\": {},"
-            "\"events\": {}"
+            "\"actions\": {}"
         "}"
     );
 
-    _json_root_value = json_parse_file(filepath);
-    if (!_json_root_value) {
+    json_root = json_parse_file(filepath);
+    if (!json_root) {
         duderr("JSON formatted input is invalid");
         goto done;
     }
 
-    if (json_validate(schema, _json_root_value) != JSONSuccess) {
+    if (json_validate(schema, json_root) != JSONSuccess) {
         duderr("Erroneous JSON schema");
-        json_value_free(_json_root_value);
+        json_value_free(json_root);
         goto done;
     }
 
-    name = json_object_get_string(json_object(_json_root_value), "name");
+    name = json_object_get_string(json_object(json_root), "name");
     dudinfo("%s loaded successfully!", filepath, name);
-    printf("  -- NAME: %s\n", name);
 
-    if (_set_input_params()) {
-        duderr("Failed to parse and initialize the input parameters");
+    output = _init_output_handler(json_root);
+    if (!output) {
+        duderr("Failed to parse the output parameters");
         goto done;
     }
 
-    if (_set_output_params()) {
-        duderr("Failed to parse and initialize the output parameters");
+    actions = _init_actions_handler(json_root);
+    if (!actions) {
+        duderr("Failed to initialize the actions handler");
         goto done;
     }
 
-    ret = SUCCESS;
+    ctx = (dud_t *)malloc(sizeof(dud_t));
+    if (!ctx) {
+        duderr("Out of memory");
+        goto done;
+    }
+
+    ctx->name = name;
+    ctx->json_root = json_root;
+    ctx->actions = actions;
+    ctx->output = output;
+
 done:
     json_value_free(schema);
-    return ret;
+    return ctx;
 }
