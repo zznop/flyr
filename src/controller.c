@@ -136,7 +136,7 @@ static int _consume_hexstr(const char *hexstr, dud_t *ctx)
     if (hexstr[strspn(hexstr, "0123456789abcdefABCDEF")]) {
         duderr("Input data is not a valid hex string");
         return FAILURE;
-	}
+    }
 
     data_size = strlen(hexstr) / 2;
     if (!ctx->buffer.data) {
@@ -159,11 +159,11 @@ static int _consume_hexstr(const char *hexstr, dud_t *ctx)
         ctx->buffer.size += data_size;
     }
 
-	pos = hexstr;
+    pos = hexstr;
     for (i = 0; i < data_size; i++, ctx->buffer.ptr++) {
         sscanf(pos, "%2hhx", ctx->buffer.ptr);
         pos += 2;
-	}
+    }
 
     return SUCCESS;
 }
