@@ -24,8 +24,14 @@ struct output_params {
 
 struct actions_handler {
     struct json_value_t *json_value;
-    size_t num_actions;
+    size_t count;
     size_t idx;
+};
+
+struct buffer_handler {
+    uint8_t *data;
+    uint8_t *ptr;
+    size_t size;
 };
 
 typedef struct {
@@ -33,6 +39,7 @@ typedef struct {
     struct json_value_t *json_root;
     struct actions_handler *actions;
     struct output_handler *output;
+    struct buffer_handler buffer;
 } dud_t;
 
 dud_t *dudley_load_file(const char *filepath);
