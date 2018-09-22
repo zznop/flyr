@@ -4,7 +4,9 @@
 
 #include "utils.h"
 #include "main.h"
-#include "controller.h"
+#include "parse.h"
+#include "build.h"
+#include "mutate.h"
 
 /**
  * Display command-line interface usage
@@ -29,14 +31,14 @@ int main(int argc, char **argv)
 
     if (argc < 2) {
         print_help();
-        return SUCCESS;
+        goto out;
     }
 
     while ((opt = getopt(argc, argv, "hf:")) != -1) {
         switch (opt) {
         case 'h':
             print_help();
-            return SUCCESS;
+            goto out;
 
         case 'f':
             filepath = optarg;
@@ -49,16 +51,30 @@ int main(int argc, char **argv)
 
     if (!filepath) {
         duderr("you must supply a filepath");
-        return ret;
+        goto out;
     }
 
-    ctx = dudley_load_file(filepath);
+    dudinfo("Loading dudley file and validating the JSON schema");
+    ctx = load_file(filepath);
     if (!ctx) {
-        return ret;
+        goto out;
     }
 
-    ret = dudley_iterate_actions(ctx);
-    dudley_destroy(ctx);
+    dudinfo("Applying build actions...");
+    if (iterate_actions(ctx) == FAILURE) {
+        goto out;
+    }
+
+    dudinfo("Processing mutations...");
+    if (iterate_mutations(ctx) == FAILURE) {
+        goto out;
+    }
+
+    ret = SUCCESS;
+out:
+    if (ctx) {
+        destroy_context(ctx);
+    }
 
     return ret;
 }
