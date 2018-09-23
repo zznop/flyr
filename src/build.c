@@ -8,7 +8,6 @@ static int _consume_hexstr(const char *hexstr, dud_t *ctx)
     size_t i = 0;
     uint8_t *tmp = NULL;
 
-    // Ensure it's a valid hex string
     if (hexstr[strspn(hexstr, "0123456789abcdefABCDEF")]) {
         duderr("Input data is not a valid hex string");
         return FAILURE;
@@ -79,9 +78,8 @@ static int _handle_action(struct json_value_t *action_json_value, dud_t *ctx)
         return FAILURE;
     }
 
-    if (strstr(action, "consume")) {
+    if (strstr(action, "consume"))
         return _consume_data(action_json_value, ctx);
-    }
 
     return FAILURE;
 }
@@ -98,9 +96,8 @@ int iterate_actions(dud_t *ctx)
             return FAILURE;
         }
 
-        if (_handle_action(action_json_value, ctx) == FAILURE) {
+        if (_handle_action(action_json_value, ctx) == FAILURE)
             return FAILURE;
-        }
     }
 
     return SUCCESS;

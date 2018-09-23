@@ -51,7 +51,6 @@ static actions_t *_init_actions_handler(struct json_value_t *json_root)
     }
 
     actions->idx = 0;
-
     return actions;
 }
 
@@ -98,14 +97,11 @@ static output_t *_set_output_params(struct json_value_t *json_output_value)
     return output;
 fail:
     duderr("Out of memory");
-    if (fout_params) {
+    if (fout_params)
         free(fout_params);
-    }
 
-    if (output) {
+    if (output)
         free(output);
-        output = NULL;
-    }
 
     return NULL;
 }
@@ -140,29 +136,24 @@ static output_t *_init_output_handler(struct json_value_t *json_root)
 
 void destroy_context(dud_t *ctx)
 {
-    if (ctx->actions) {
+    if (ctx->actions)
         free(ctx->actions);
-    }
 
     if (ctx->output) {
-        if (ctx->output->params) {
+        if (ctx->output->params)
             free(ctx->output->params);
-        }
 
         free(ctx->output);
     }
 
-    if (ctx->mutations) {
+    if (ctx->mutations)
         free(ctx->mutations);
-    }
 
-    if (ctx->json_root) {
+    if (ctx->json_root)
         json_value_free(ctx->json_root);
-    }
 
-    if (ctx->buffer.data) {
+    if (ctx->buffer.data)
         free(ctx->buffer.data);
-    }
 
     free(ctx);
     ctx = NULL;

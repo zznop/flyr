@@ -51,25 +51,21 @@ int main(int argc, char **argv)
 
     dudinfo("Loading dudley file and validating the JSON schema");
     ctx = load_file(filepath);
-    if (!ctx) {
+    if (!ctx)
         goto out;
-    }
 
     dudinfo("Applying build actions...");
-    if (iterate_actions(ctx) == FAILURE) {
+    if (iterate_actions(ctx) == FAILURE)
         goto out;
-    }
 
     dudinfo("Processing mutations...");
-    if (iterate_mutations(ctx, output_mutated_data) == FAILURE) {
+    if (iterate_mutations(ctx, output_mutated_data) == FAILURE)
         goto out;
-    }
 
     ret = SUCCESS;
 out:
-    if (ctx) {
+    if (ctx)
         destroy_context(ctx);
-    }
 
     return ret;
 }

@@ -11,16 +11,13 @@ static int32_t _hex_string_to_integer(const char *hexstr)
 {
     long val;
 
-    if (!hexstr) {
+    if (!hexstr)
         return -1;
-    }
 
-    if (strlen(hexstr) > 2 && !strncmp(hexstr, "0x", 2)) {
-        val = strtol(hexstr, NULL, 16);
-    } else {
-        // Everything else is treated as decimal
-        val = strtol(hexstr, NULL, 10);
-    }
+    if (strlen(hexstr) > 2 && !strncmp(hexstr, "0x", 2))
+        val = strtol(hexstr, NULL, 16); // hex
+    else
+        val = strtol(hexstr, NULL, 10); // decimal
 
     if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) ||
         (errno != 0 && val == 0)) {
@@ -35,14 +32,11 @@ static int _bitflip_and_invoke_callback(uint32_t start, uint32_t stop,
 {
     size_t i, j;
     char saved;
-
     for (i = start; i <= stop; i++) {
         saved = ctx->buffer.data[i];
-
         for (j = 0; j < BITS_IN_BYTE; j++) {
             ctx->buffer.data[i] = saved;
             BITFLIP(&ctx->buffer.data[i], j);
-
             if (callback(ctx) != SUCCESS) {
                 ctx->buffer.data[i] = saved;
                 return FAILURE;
@@ -77,6 +71,11 @@ static int _handle_bitflip_mutation(struct json_value_t *action_json_value,
         return FAILURE;
     }
 
+    if ((size_t)stop_offset > ctx->buffer.size) {
+        duderr("Bitflip stop offset exceeds end of buffer");
+        return FAILURE;
+    }
+
     return _bitflip_and_invoke_callback((uint32_t)start_offset,
         (uint32_t)stop_offset, ctx, callback);
 }
@@ -89,9 +88,8 @@ static int _handle_mutation(struct json_value_t *action_json_value, dud_t *ctx, 
         return FAILURE;
     }
 
-    if (strstr(action, "bitflip")) {
+    if (strstr(action, "bitflip"))
         return _handle_bitflip_mutation(action_json_value, ctx, callback);
-    }
 
     duderr("Erroneous mutation action: %s", action);
     return FAILURE;
