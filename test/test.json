@@ -2,7 +2,7 @@
     "name" : "PCap File Format Fuzzer",
     "output" : {
         "method" : "file-out",
-        "directory-path" : "./",
+        "directory-path" : "./output",
         "name-suffix" : "test.pcap"
     },
     "actions" : {

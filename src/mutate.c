@@ -35,12 +35,14 @@ static int _bitflip_and_invoke_callback(uint32_t start, uint32_t stop,
     for (i = start; i <= stop; i++) {
         saved = ctx->buffer.data[i];
         for (j = 0; j < BITS_IN_BYTE; j++) {
-            ctx->buffer.data[i] = saved;
             BITFLIP(&ctx->buffer.data[i], j);
+
             if (callback(ctx) != SUCCESS) {
                 ctx->buffer.data[i] = saved;
                 return FAILURE;
             }
+
+            ctx->buffer.data[i] = saved;
         }
     }
 

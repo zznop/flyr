@@ -17,7 +17,7 @@ struct output_params {
 };
 
 typedef struct {
-    enum output_method method;
+    int method;
     struct json_value_t *json_value;
     struct output_params *params;
 } output_t;

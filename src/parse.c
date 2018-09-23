@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "parse.h"
 #include "mutate.h"
+#include <sys/stat.h>
 
 static mutations_t *_init_mutations_handler(struct json_value_t *json_root)
 {
@@ -60,11 +61,17 @@ static output_t *_set_output_params(struct json_value_t *json_output_value)
     const char *directory_path = NULL;
     const char *name_suffix = NULL;
     struct output_params *fout_params = NULL;
+    struct stat st = {0};
 
     directory_path = json_object_get_string(
             json_object(json_output_value), "directory-path");
     if (!directory_path) {
         duderr("Export directory path not supplied: \"directory-path\"");
+        goto fail;
+    }
+
+    if (stat(directory_path, &st) == -1) {
+        duderr("Directory does not exist: %s", directory_path);
         goto fail;
     }
 
