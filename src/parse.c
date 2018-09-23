@@ -6,9 +6,6 @@
 #include "parse.h"
 #include "mutate.h"
 
-/**
- * Initialize the mutations handler
- */
 static mutations_t *_init_mutations_handler(struct json_value_t *json_root)
 {
     mutations_t *mutations = (mutations_t *)malloc(sizeof(mutations_t));
@@ -33,9 +30,6 @@ static mutations_t *_init_mutations_handler(struct json_value_t *json_root)
     return mutations;
 }
 
-/**
- * Initializes the actions handler
- */
 static actions_t *_init_actions_handler(struct json_value_t *json_root)
 {
     actions_t *actions = (actions_t *)malloc(sizeof(actions_t));
@@ -61,9 +55,6 @@ static actions_t *_init_actions_handler(struct json_value_t *json_root)
     return actions;
 }
 
-/**
- * Parse file output parameters and set _output_params to use them
- */
 static output_t *_set_output_params(struct json_value_t *json_output_value)
 {
     output_t *output = NULL;
@@ -119,9 +110,6 @@ fail:
     return NULL;
 }
 
-/**
- * Parse output parameters from JSON file and set parameters
- */
 static output_t *_init_output_handler(struct json_value_t *json_root)
 {
     output_t *output = NULL;
@@ -150,9 +138,6 @@ static output_t *_init_output_handler(struct json_value_t *json_root)
     return output;
 }
 
-/**
- * Cleanup dudley context
- */
 void destroy_context(dud_t *ctx)
 {
     if (ctx->actions) {
@@ -183,9 +168,6 @@ void destroy_context(dud_t *ctx)
     ctx = NULL;
 }
 
-/**
- * Parse dudley JSON file and validate the schema
- */
 dud_t *load_file(const char *filepath)
 {
     const char *name = NULL;

@@ -7,10 +7,8 @@
 #include "parse.h"
 #include "build.h"
 #include "mutate.h"
+#include "output.h"
 
-/**
- * Display command-line interface usage
- */
 static void print_help(void)
 {
     printf(
@@ -19,9 +17,6 @@ static void print_help(void)
     );
 }
 
-/**
- * Parse arguments and execute a dudley file
- */
 int main(int argc, char **argv)
 {
     int opt = 0;
@@ -66,7 +61,7 @@ int main(int argc, char **argv)
     }
 
     dudinfo("Processing mutations...");
-    if (iterate_mutations(ctx) == FAILURE) {
+    if (iterate_mutations(ctx, output_mutated_data) == FAILURE) {
         goto out;
     }
 

@@ -5,9 +5,6 @@
 #include "utils.h"
 #define LOG_BUF_SIZE (256)
 
-/**
- * Print a dudley info message to stdout
- */
 void dudinfo(const char *fmt, ...)
 {
     va_list ap;
@@ -19,9 +16,6 @@ void dudinfo(const char *fmt, ...)
     fprintf(stdout, "* %s\n", buf);
 }
 
-/**
- * Print a dudley error message to stdout
- */
 void duderr(const char *fmt, ...)
 {
     va_list ap;

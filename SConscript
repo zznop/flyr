@@ -6,6 +6,7 @@ sources = [
     '$SRCDIR/parse.c',
     '$SRCDIR/build.c',
     '$SRCDIR/mutate.c',
+    '$SRCDIR/output.c',
     '$SRCDIR/parson/parson.c',
 ]
 

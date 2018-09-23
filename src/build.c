@@ -1,9 +1,6 @@
 #include "build.h"
 #include "utils.h"
 
-/**
- * Convert hext string to byte array and append it to the buffer
- */
 static int _consume_hexstr(const char *hexstr, dud_t *ctx)
 {
     size_t data_size = 0;
@@ -47,9 +44,6 @@ static int _consume_hexstr(const char *hexstr, dud_t *ctx)
     return SUCCESS;
 }
 
-/**
- * Parse and input data by specified type
- */
 static int _consume_data(struct json_value_t *action_json_value, dud_t *ctx)
 {
     const char *type = NULL;
@@ -77,9 +71,6 @@ static int _consume_data(struct json_value_t *action_json_value, dud_t *ctx)
     return SUCCESS;
 }
 
-/**
- * Parse and handle action by name
- */
 static int _handle_action(struct json_value_t *action_json_value, dud_t *ctx)
 {
     const char *action = json_object_get_string(json_object(action_json_value), "action");
@@ -95,9 +86,6 @@ static int _handle_action(struct json_value_t *action_json_value, dud_t *ctx)
     return FAILURE;
 }
 
-/**
- * Iterate actions and construct template data buffer
- */
 int iterate_actions(dud_t *ctx)
 {
     struct json_value_t *action_json_value = NULL;
