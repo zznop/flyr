@@ -103,7 +103,6 @@ static output_t *_set_output_params(struct json_value_t *json_output_value)
 
     return output;
 fail:
-    duderr("Out of memory");
     if (fout_params)
         free(fout_params);
 
@@ -185,7 +184,7 @@ dud_t *load_file(const char *filepath)
 
     json_root = json_parse_file(filepath);
     if (!json_root) {
-        duderr("JSON formatted input is invalid");
+        duderr("Failed to open dudley file");
         goto done;
     }
 
