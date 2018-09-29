@@ -34,8 +34,6 @@ your command with `scuba`.
 
 ## Getting Started
 
-1. Construct a dudley file:
-
 ```
 $ cat test/test.json
 {
