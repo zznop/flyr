@@ -1,0 +1,4 @@
+image: dudley-build:latest
+aliases:
+  build:
+    script: scons -j 4

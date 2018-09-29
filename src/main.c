@@ -62,6 +62,7 @@ int main(int argc, char **argv)
     if (iterate_mutations(ctx, output_mutated_data) == FAILURE)
         goto out;
 
+    dudinfo("Done.");
     ret = SUCCESS;
 out:
     if (ctx)
