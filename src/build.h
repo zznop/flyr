@@ -3,6 +3,6 @@
 
 #include "parse.h"
 
-int iterate_actions(dud_t *ctx);
+int iterate_blocks(dud_t *ctx);
 
 #endif

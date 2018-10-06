@@ -1,22 +1,29 @@
+/**
+ * output.c
+ *
+ * Copyright (C) 2018 zznop, zznop0x90@gmail.com
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
+
 #include "output.h"
 #include "utils.h"
 #include "parse.h"
-#include <sys/time.h>
 
 #define MAX_FILENAME_SIZE 128
 
-static int _output_data_to_file(dud_t *ctx)
+static size_t count = 0;
+
+static int output_data_to_file(dud_t *ctx)
 {
     char filename[MAX_FILENAME_SIZE];
-    struct timeval currtime;
     FILE *file = NULL;
     int ret = FAILURE;
 
-    gettimeofday(&currtime, NULL);
     snprintf(
-        filename, MAX_FILENAME_SIZE, "%s/%ld_%ld_%s",
-        ctx->output->params->directory_path, currtime.tv_sec,
-        currtime.tv_usec, ctx->output->params->name_suffix
+        filename, MAX_FILENAME_SIZE, "%s/%08ld-%s",
+        ctx->output->params->directory_path, count, ctx->output->params->name_suffix
     );
 
     file = fopen(filename, "wb");
@@ -32,6 +39,8 @@ static int _output_data_to_file(dud_t *ctx)
 
     ret = SUCCESS;
 out:
+    count++;
+
     if (file)
         fclose(file);
 
@@ -42,7 +51,7 @@ int output_mutated_data(dud_t *ctx)
 {
     switch (ctx->output->method) {
     case OUTPUT_FILEOUT:
-        return _output_data_to_file(ctx);
+        return output_data_to_file(ctx);
     }
 
     return FAILURE;

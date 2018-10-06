@@ -1,38 +1,26 @@
+/**
+ * mutate.c
+ *
+ * Copyright (C) 2018 zznop, zznop0x90@gmail.com
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
+
 #include "mutate.h"
 #include "utils.h"
-#include  <errno.h>
-#include <limits.h>
+#include "conversion.h"
 
 #define BITS_IN_BYTE (8)
 #define BITFLIP(ptr, pos) \
     *ptr ^= 1UL << pos;
 
-static int32_t _hex_string_to_integer(const char *hexstr)
-{
-    long val;
-
-    if (!hexstr)
-        return -1;
-
-    if (strlen(hexstr) > 2 && !strncmp(hexstr, "0x", 2))
-        val = strtol(hexstr, NULL, 16); // hex
-    else
-        val = strtol(hexstr, NULL, 10); // decimal
-
-    if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) ||
-        (errno != 0 && val == 0)) {
-        return -1;
-    }
-
-    return (int32_t)val;
-}
-
-static int _bitflip_and_invoke_callback(uint32_t start, uint32_t stop,
+static int bitflip_and_invoke_callback(long start, long stop,
     dud_t *ctx, callback_t callback)
 {
     size_t i, j;
     char saved;
-    for (i = start; i <= stop; i++) {
+    for (i = (size_t)start; i <= (size_t)stop; i++) {
         saved = ctx->buffer.data[i];
         for (j = 0; j < BITS_IN_BYTE; j++) {
             BITFLIP(&ctx->buffer.data[i], j);
@@ -49,13 +37,12 @@ static int _bitflip_and_invoke_callback(uint32_t start, uint32_t stop,
     return SUCCESS;
 }
 
-static int _handle_bitflip_mutation(struct json_value_t *action_json_value,
+static int handle_bitflip_mutation(struct json_value_t *action_json_value,
     dud_t *ctx, callback_t callback)
 {
-    (void)action_json_value;
-    int32_t start_offset, stop_offset;
+    long start_offset, stop_offset;
 
-    start_offset = _hex_string_to_integer(
+    start_offset = hex_string_to_long(
         json_object_get_string(json_object(action_json_value), "start")
     );
 
@@ -64,7 +51,7 @@ static int _handle_bitflip_mutation(struct json_value_t *action_json_value,
         return FAILURE;
     }
 
-    stop_offset = _hex_string_to_integer(
+    stop_offset = hex_string_to_long(
         json_object_get_string(json_object(action_json_value), "stop")
     );
 
@@ -78,11 +65,10 @@ static int _handle_bitflip_mutation(struct json_value_t *action_json_value,
         return FAILURE;
     }
 
-    return _bitflip_and_invoke_callback((uint32_t)start_offset,
-        (uint32_t)stop_offset, ctx, callback);
+    return bitflip_and_invoke_callback(start_offset, stop_offset, ctx, callback);
 }
 
-static int _handle_mutation(struct json_value_t *action_json_value, dud_t *ctx, callback_t callback)
+static int handle_mutation(struct json_value_t *action_json_value, dud_t *ctx, callback_t callback)
 {
     const char *action = json_object_get_string(json_object(action_json_value), "action");
     if (!action) {
@@ -91,7 +77,7 @@ static int _handle_mutation(struct json_value_t *action_json_value, dud_t *ctx, 
     }
 
     if (strstr(action, "bitflip"))
-        return _handle_bitflip_mutation(action_json_value, ctx, callback);
+        return handle_bitflip_mutation(action_json_value, ctx, callback);
 
     duderr("Erroneous mutation action: %s", action);
     return FAILURE;
@@ -108,7 +94,7 @@ int iterate_mutations(dud_t *ctx, callback_t callback)
             return FAILURE;
         }
 
-        _handle_mutation(action_json_value, ctx, callback);
+        handle_mutation(action_json_value, ctx, callback);
     }
 
     return SUCCESS;

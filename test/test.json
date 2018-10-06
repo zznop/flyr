@@ -5,15 +5,24 @@
         "directory-path" : "./",
         "name-suffix" : "example.bin"
     },
-    "actions" : {
-        "input all the things" : {
-            "action" : "consume",
+    "blocks" : {
+        "example-dword" :  {
+            "type" : "dword",
+            "value" : "0xcafebabe",
+            "endianess" : "big"
+        },
+        "example-word" : {
+            "type" : "word",
+            "value" : "0x1337",
+            "endianess" : "little"
+        },
+        "example-data" : {
             "type" : "hex",
-            "data" : "deadbeeffeedface"
+            "value" : "deadbeeffeedface"
         }
     },
     "mutations" : {
-        "mutate all the things" : {
+        "bitflip-stuff" : {
             "action" : "bitflip",
             "start" : "0x0",
             "stop" : "0x8"
