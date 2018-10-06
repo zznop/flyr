@@ -7,6 +7,7 @@ sources = [
     '$SRCDIR/build.c',
     '$SRCDIR/mutate.c',
     '$SRCDIR/output.c',
+    '$SRCDIR/conversion.c',
     '$SRCDIR/parson/parson.c',
 ]
 

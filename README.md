@@ -43,9 +43,8 @@ $ cat test/test.json
         "directory-path" : "./",
         "name-suffix" : "example.bin"
     },
-    "actions" : {
+    "blocks" : {
         "input all the things" : {
-            "action" : "consume",
             "type" : "hex",
             "data" : "deadbeeffeedface"
         }
@@ -72,7 +71,6 @@ $ ./build/release/dudley -f test/test.json
 
 ```
 $ ls
-1538199747_585456_example.bin  1538199747_586280_example.bin  1538199747_586846_example.bin
-1538199747_585789_example.bin  1538199747_586326_example.bin  1538199747_586891_example.bin
+00000000-example.bin  00000001-example.bin  00000002-example.bin
 ...
 ```

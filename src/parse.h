@@ -26,7 +26,7 @@ typedef struct {
     struct json_value_t *json_value;
     size_t count;
     size_t idx;
-} actions_t;
+} blocks_t;
 
 typedef struct {
     struct json_value_t *json_value;
@@ -43,7 +43,7 @@ typedef struct {
 typedef struct {
     const char *name;
     struct json_value_t *json_root;
-    actions_t *actions;
+    blocks_t *blocks;
     mutations_t *mutations;
     output_t *output;
     buffer_t buffer;

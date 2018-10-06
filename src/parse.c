@@ -1,5 +1,10 @@
-/*
- * controller.c
+/**
+ * parse.c
+ *
+ * Copyright (C) 2018 zznop, zznop0x90@gmail.com
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
  */
 
 #include "utils.h"
@@ -7,7 +12,7 @@
 #include "mutate.h"
 #include <sys/stat.h>
 
-static mutations_t *_init_mutations_handler(struct json_value_t *json_root)
+static mutations_t *init_mutations_ctx(struct json_value_t *json_root)
 {
     mutations_t *mutations = (mutations_t *)malloc(sizeof(mutations_t));
     if (!mutations) {
@@ -31,31 +36,31 @@ static mutations_t *_init_mutations_handler(struct json_value_t *json_root)
     return mutations;
 }
 
-static actions_t *_init_actions_handler(struct json_value_t *json_root)
+static blocks_t *init_blocks_ctx(struct json_value_t *json_root)
 {
-    actions_t *actions = (actions_t *)malloc(sizeof(actions_t));
-    if (!actions) {
+    blocks_t *blocks = (blocks_t *)malloc(sizeof(blocks_t));
+    if (!blocks) {
         duderr("Out of memory");
         return NULL;
     }
 
-    actions->json_value = json_object_get_value(json_object(json_root), "actions");
-    if (!actions->json_value) {
-        duderr("Failed to retrieve \"actions\" JSON value");
+    blocks->json_value = json_object_get_value(json_object(json_root), "blocks");
+    if (!blocks->json_value) {
+        duderr("Failed to retrieve \"blocks\" JSON value");
         return NULL;
     }
 
-    actions->count = json_object_get_count(json_object(actions->json_value));
-    if (!actions->count) {
-        duderr("Failed to retrieve \"num-actions\" JSON value");
+    blocks->count = json_object_get_count(json_object(blocks->json_value));
+    if (!blocks->count) {
+        duderr("Failed to get blocks count");
         return NULL;
     }
 
-    actions->idx = 0;
-    return actions;
+    blocks->idx = 0;
+    return blocks;
 }
 
-static output_t *_set_output_params(struct json_value_t *json_output_value)
+static output_t *set_output_params(struct json_value_t *json_output_value)
 {
     output_t *output = NULL;
     const char *directory_path = NULL;
@@ -112,7 +117,7 @@ fail:
     return NULL;
 }
 
-static output_t *_init_output_handler(struct json_value_t *json_root)
+static output_t *init_output_ctx(struct json_value_t *json_root)
 {
     output_t *output = NULL;
     struct json_value_t *json_output_value = NULL;
@@ -131,7 +136,7 @@ static output_t *_init_output_handler(struct json_value_t *json_root)
     }
 
     if (!strcmp(method, "file-out")) {
-        output = _set_output_params(json_output_value);
+        output = set_output_params(json_output_value);
     } else {
         duderr("unsupported export method: %s", method);
         return NULL;
@@ -142,8 +147,8 @@ static output_t *_init_output_handler(struct json_value_t *json_root)
 
 void destroy_context(dud_t *ctx)
 {
-    if (ctx->actions)
-        free(ctx->actions);
+    if (ctx->blocks)
+        free(ctx->blocks);
 
     if (ctx->output) {
         if (ctx->output->params)
@@ -171,13 +176,13 @@ dud_t *load_file(const char *filepath)
     struct json_value_t *json_root = NULL;
     output_t *output = NULL;
     mutations_t *mutations = NULL;
-    actions_t *actions = NULL;
+    blocks_t *blocks = NULL;
     dud_t *ctx = NULL;
     struct json_value_t *schema = json_parse_string(
         "{"
             "\"name\":\"\","
             "\"output\": {},"
-            "\"actions\": {},"
+            "\"blocks\": {},"
             "\"mutations\": {}"
         "}"
     );
@@ -197,19 +202,19 @@ dud_t *load_file(const char *filepath)
     name = json_object_get_string(json_object(json_root), "name");
     dudinfo("%s (%s) loaded successfully!", filepath, name);
 
-    output = _init_output_handler(json_root);
+    output = init_output_ctx(json_root);
     if (!output) {
         duderr("Failed to parse the output parameters");
         goto done;
     }
 
-    actions = _init_actions_handler(json_root);
-    if (!actions) {
-        duderr("Failed to initialize the actions handler");
+    blocks = init_blocks_ctx(json_root);
+    if (!blocks) {
+        duderr("Failed to initialize the blocks handler");
         goto done;
     }
 
-    mutations = _init_mutations_handler(json_root);
+    mutations = init_mutations_ctx(json_root);
     if (!mutations) {
         duderr("Failed to initialize the mutations handler");
         goto done;
@@ -223,7 +228,7 @@ dud_t *load_file(const char *filepath)
 
     ctx->name = name;
     ctx->json_root = json_root;
-    ctx->actions = actions;
+    ctx->blocks = blocks;
     ctx->mutations = mutations;
     ctx->output = output;
     ctx->buffer.data = NULL;
