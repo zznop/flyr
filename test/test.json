@@ -6,6 +6,11 @@
         "name-suffix" : "example.bin"
     },
     "blocks" : {
+        "example-qword" : {
+            "type" : "qword",
+            "value" : "0xf00bf00bbeefbeef",
+            "endianess" : "little"
+        },
         "example-dword" :  {
             "type" : "dword",
             "value" : "0xcafebabe",
@@ -18,7 +23,7 @@
         },
         "example-data" : {
             "type" : "hex",
-            "value" : "deadbeeffeedface"
+            "value" : "4141414141414141"
         }
     },
     "mutations" : {

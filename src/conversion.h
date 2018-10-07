@@ -13,8 +13,9 @@ enum endianess {
     ERRONEOUS_ENDIAN
 };
 
-long hex_string_to_long(const char *hexstr);
-uint32_t hex_string_to_dword(const char *hexstr, enum endianess endian);
-uint16_t hex_string_to_word(const char *hexstr, enum endianess endian);
+long hexstr_to_long(const char *hexstr);
+uint32_t hexstr_to_dword(const char *hexstr, enum endianess endian);
+uint16_t hexstr_to_word(const char *hexstr, enum endianess endian);
+uint64_t hexstr_to_qword(const char *hexstr, enum endianess endian);
 
 #endif

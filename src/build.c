@@ -83,6 +83,36 @@ static enum endianess get_endianess(struct json_value_t *block_json_value)
     return ERRONEOUS_ENDIAN;
 }
 
+static int consume_qword(struct json_value_t *block_json_value, dud_t *ctx)
+{
+    uint64_t qword;
+    const char *value;
+    enum endianess endian = get_endianess(block_json_value);
+    if (endian == ERRONEOUS_ENDIAN) {
+        return FAILURE;
+    }
+
+    value = json_object_get_string(json_object(block_json_value), "value");
+    if (!value) {
+        duderr("Failed to retrieve dword value from block");
+        return FAILURE;
+    }
+
+    qword = hexstr_to_qword(value, endian);
+    if (qword == 0 && errno != 1) {
+        duderr("JSON value cannot be represented as a qword: %s", value);
+        return FAILURE;
+    }
+
+    if (realloc_data_buffer(ctx, sizeof(qword)))
+        return FAILURE;
+
+    memcpy(ctx->buffer.ptr, &qword, sizeof(qword));
+    ctx->buffer.ptr += sizeof(qword);
+
+    return SUCCESS;
+}
+
 static int consume_dword(struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint32_t dword;
@@ -98,7 +128,12 @@ static int consume_dword(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
     }
 
-    dword = hex_string_to_dword(value, endian);
+    dword = hexstr_to_dword(value, endian);
+    if (dword == 0 && errno != 1) {
+        duderr("JSON value cannot be represented as a dword: %s", value);
+        return FAILURE;
+    }
+
     if (realloc_data_buffer(ctx, sizeof(dword)))
         return FAILURE;
 
@@ -123,7 +158,12 @@ static int consume_word(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
     }
 
-    word = hex_string_to_word(value, endian);
+    word = hexstr_to_word(value, endian);
+    if (word == 0 && errno != 0) {
+        duderr("JSON value cannot be represented as a word: %s", value);
+        return FAILURE;
+    }
+
     if (realloc_data_buffer(ctx, sizeof(word)))
         return FAILURE;
 
@@ -143,6 +183,8 @@ static int handle_block(struct json_value_t *block_json_value, dud_t *ctx)
 
     if (strstr(type, "hex"))
         return consume_hexstr(block_json_value, ctx);
+    else if (strstr(type, "qword"))
+        return consume_qword(block_json_value, ctx);
     else if (strstr(type, "dword"))
         return consume_dword(block_json_value, ctx);
     else if (strstr(type, "word"))

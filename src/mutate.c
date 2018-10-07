@@ -42,21 +42,21 @@ static int handle_bitflip_mutation(struct json_value_t *action_json_value,
 {
     long start_offset, stop_offset;
 
-    start_offset = hex_string_to_long(
+    start_offset = hexstr_to_long(
         json_object_get_string(json_object(action_json_value), "start")
     );
 
-    if (start_offset < 0) {
-        duderr("Erroneous mutation start offset");
+    if (start_offset == 0 && errno != 0) {
+        duderr("Failed to parse JSON mutation start offset as a number");
         return FAILURE;
     }
 
-    stop_offset = hex_string_to_long(
+    stop_offset = hexstr_to_long(
         json_object_get_string(json_object(action_json_value), "stop")
     );
 
-    if (stop_offset < 0) {
-        duderr("Erroneous mutation stop offset");
+    if (stop_offset == 0 && errno != 0) {
+        duderr("Failed to parse JSON mutation stop offset as a number");
         return FAILURE;
     }
 
