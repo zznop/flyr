@@ -14,6 +14,7 @@ typedef enum {
 } endianess_t;
 
 long hexstr_to_long(const char *hexstr);
+uint8_t hexstr_to_byte(const char *hexstr);
 uint32_t hexstr_to_dword(const char *hexstr, endianess_t endian);
 uint16_t hexstr_to_word(const char *hexstr, endianess_t endian);
 uint64_t hexstr_to_qword(const char *hexstr, endianess_t endian);
