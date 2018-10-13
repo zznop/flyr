@@ -68,27 +68,27 @@ static int consume_hexstr(struct json_value_t *block_json_value, dud_t *ctx)
     return SUCCESS;
 }
 
-static enum endianess get_endianess(struct json_value_t *block_json_value)
+static endianess_t get_endianess(struct json_value_t *block_json_value)
 {
     const char *value = json_object_get_string(json_object(block_json_value), "endianess");
     if (!value)
-        return BIG_ENDIAN;
+        return BIGEND;
 
     if (strstr(value, "little"))
-        return LITTLE_ENDIAN;
+        return LITEND;
     else if (strstr(value, "big"))
-        return BIG_ENDIAN;
+        return BIGEND;
 
     duderr("Erroneous endian specification: %s", value);
-    return ERRONEOUS_ENDIAN;
+    return ERREND;
 }
 
 static int consume_qword(struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint64_t qword;
     const char *value;
-    enum endianess endian = get_endianess(block_json_value);
-    if (endian == ERRONEOUS_ENDIAN) {
+    endianess_t endian = get_endianess(block_json_value);
+    if (endian == ERREND) {
         return FAILURE;
     }
 
@@ -117,8 +117,8 @@ static int consume_dword(struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint32_t dword;
     const char *value;
-    enum endianess endian = get_endianess(block_json_value);
-    if (endian == ERRONEOUS_ENDIAN) {
+    endianess_t endian = get_endianess(block_json_value);
+    if (endian == ERREND) {
         return FAILURE;
     }
 
@@ -147,8 +147,8 @@ static int consume_word(struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint16_t word;
     const char *value;
-    enum endianess endian = get_endianess(block_json_value);
-    if (endian == ERRONEOUS_ENDIAN) {
+    endianess_t endian = get_endianess(block_json_value);
+    if (endian == ERREND) {
         return FAILURE;
     }
 

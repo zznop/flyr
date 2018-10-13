@@ -19,7 +19,7 @@ long hexstr_to_long(const char *hexstr)
     return strtol(hexstr, NULL, 0);
 }
 
-uint32_t hexstr_to_dword(const char *hexstr, enum endianess endian)
+uint32_t hexstr_to_dword(const char *hexstr, endianess_t endian)
 {
     uint32_t val;
 
@@ -29,14 +29,14 @@ uint32_t hexstr_to_dword(const char *hexstr, enum endianess endian)
     }
 
     val = strtoul(hexstr, NULL, 0);
-    if (endian == BIG_ENDIAN) {
+    if (endian == BIGEND) {
         return __bswap_32(val);
     }
 
     return val;
 }
 
-uint16_t hexstr_to_word(const char *hexstr, enum endianess endian)
+uint16_t hexstr_to_word(const char *hexstr, endianess_t endian)
 {
     uint32_t valdword;
     uint16_t valword;
@@ -48,14 +48,14 @@ uint16_t hexstr_to_word(const char *hexstr, enum endianess endian)
 
     valdword = strtoul(hexstr, NULL, 0);
     valword = (uint16_t)valdword;
-    if (endian == BIG_ENDIAN) {
+    if (endian == BIGEND) {
         return __bswap_16(valword);
     }
 
     return valword;
 }
 
-uint64_t hexstr_to_qword(const char *hexstr, enum endianess endian)
+uint64_t hexstr_to_qword(const char *hexstr, endianess_t endian)
 {
     uint64_t qword;
     char *end;
@@ -66,7 +66,7 @@ uint64_t hexstr_to_qword(const char *hexstr, enum endianess endian)
     }
 
     qword = strtoull(hexstr, &end, 0);
-    if (endian == BIG_ENDIAN)
+    if (endian == BIGEND)
         return __bswap_64(qword);
 
     return qword;

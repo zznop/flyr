@@ -4,10 +4,10 @@ sources = [
     '$SRCDIR/main.c',
     '$SRCDIR/utils.c',
     '$SRCDIR/parse.c',
+    '$SRCDIR/conversion.c',
     '$SRCDIR/build.c',
     '$SRCDIR/mutate.c',
     '$SRCDIR/output.c',
-    '$SRCDIR/conversion.c',
     '$SRCDIR/parson/parson.c',
 ]
 
