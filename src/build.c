@@ -11,6 +11,39 @@
 #include "utils.h"
 #include "conversion.h"
 
+static int push_block(dud_t *ctx, uint8_t *start, size_t size, const char *len_field_name)
+{
+    struct block_metadata *curr;
+    struct block_metadata *tail;
+    curr = (struct block_metadata *)calloc(1, sizeof(struct block_metadata));
+    if (!curr) {
+        duderr("Out of memory");
+        return FAILURE;
+    }
+
+    curr->start = start;
+    curr->size = size;
+    curr->len_field_name = len_field_name;
+
+    if (!ctx->metadata_list) {
+        // first element, set head
+        ctx->metadata_list = curr;
+    } else {
+        // iterate until we get to the end and set tail->next
+        tail = ctx->metadata_list;
+        while (1) {
+            if (!tail->next) {
+                tail->next = curr;
+                break;
+            }
+
+            tail = tail->next;
+        }
+    }
+
+    return SUCCESS;
+}
+
 static int realloc_data_buffer(dud_t *ctx, size_t size)
 {
     uint8_t *tmp = NULL;
@@ -43,6 +76,7 @@ static int consume_hexstr(struct json_value_t *block_json_value, dud_t *ctx)
     const char *pos = NULL;
     size_t i = 0;
     const char *value;
+    uint8_t *start = ctx->buffer.ptr;
 
     value = json_object_get_string(json_object(block_json_value), "value");
     if (!value) {
@@ -65,6 +99,9 @@ static int consume_hexstr(struct json_value_t *block_json_value, dud_t *ctx)
         pos += 2;
     }
 
+    push_block(ctx, start, data_size,
+        json_object_get_string(json_object(block_json_value), "len-block"));
+    
     return SUCCESS;
 }
 
@@ -108,6 +145,8 @@ static int consume_qword(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &qword, sizeof(qword));
+    push_block(ctx, ctx->buffer.ptr, sizeof(qword),
+        json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(qword);
 
     return SUCCESS;
@@ -138,6 +177,8 @@ static int consume_dword(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &dword, sizeof(dword));
+    push_block(ctx, ctx->buffer.ptr, sizeof(dword),
+        json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(dword);
 
     return SUCCESS;
@@ -168,6 +209,8 @@ static int consume_word(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &word, sizeof(word));
+    push_block(ctx, ctx->buffer.ptr, sizeof(word),
+        json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(word);
 
     return SUCCESS;
@@ -194,6 +237,8 @@ static int consume_byte(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &byte, sizeof(byte));
+    push_block(ctx, ctx->buffer.ptr, sizeof(byte),
+        json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(byte);
 
     return SUCCESS;

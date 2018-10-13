@@ -40,6 +40,13 @@ typedef struct {
     size_t size;
 } buffer_t;
 
+struct block_metadata {
+    uint8_t *start;
+    size_t size;
+    const char *len_field_name;
+    struct block_metadata *next;
+};
+
 typedef struct {
     const char *name;
     struct json_value_t *json_root;
@@ -47,6 +54,7 @@ typedef struct {
     mutations_t *mutations;
     output_t *output;
     buffer_t buffer;
+    struct block_metadata *metadata_list;
 } dud_t;
 
 dud_t *load_file(const char *filepath);
