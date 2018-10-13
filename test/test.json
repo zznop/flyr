@@ -11,6 +11,10 @@
             "value" : "0xf00bf00bbeefbeef",
             "endianess" : "little"
         },
+        "example-byte" : {
+            "type" : "byte",
+            "value" : "0xf0"
+        },
         "example-dword" :  {
             "type" : "dword",
             "value" : "0xcafebabe",

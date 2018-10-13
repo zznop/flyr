@@ -173,6 +173,32 @@ static int consume_word(struct json_value_t *block_json_value, dud_t *ctx)
     return SUCCESS;
 }
 
+static int consume_byte(struct json_value_t *block_json_value, dud_t *ctx)
+{
+    uint8_t byte;
+    const char *value;
+
+    value = json_object_get_string(json_object(block_json_value), "value");
+    if (!value) {
+        duderr("Failed to retrieve byte value from block");
+        return FAILURE;
+    }
+
+    byte = hexstr_to_byte(value);
+    if (byte == 0 && errno != 0) {
+        duderr("JSON value cannot be converted to a byte: %s", value);
+        return FAILURE;
+    }
+
+    if (realloc_data_buffer(ctx, sizeof(byte)))
+        return FAILURE;
+
+    memcpy(ctx->buffer.ptr, &byte, sizeof(byte));
+    ctx->buffer.ptr += sizeof(byte);
+
+    return SUCCESS;
+}
+
 static int handle_block(struct json_value_t *block_json_value, dud_t *ctx)
 {
     const char *type = json_object_get_string(json_object(block_json_value), "type");
@@ -189,6 +215,8 @@ static int handle_block(struct json_value_t *block_json_value, dud_t *ctx)
         return consume_dword(block_json_value, ctx);
     else if (strstr(type, "word"))
         return consume_word(block_json_value, ctx);
+    else if (strstr(type, "byte"))
+        return consume_byte(block_json_value, ctx);
 
     duderr("Unsupported block type: %s\n", type);
     return FAILURE;

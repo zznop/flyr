@@ -19,6 +19,24 @@ long hexstr_to_long(const char *hexstr)
     return strtol(hexstr, NULL, 0);
 }
 
+uint8_t hexstr_to_byte(const char *hexstr)
+{
+    uint32_t val;
+
+    if (!hexstr) {
+        errno = EFAULT;
+        return 0;
+    }
+
+    val = strtoul(hexstr, NULL, 0);
+    if (val & 0xffffff00) {
+        errno = ERANGE;
+        return 0;
+    }
+
+    return (uint8_t)val;
+}
+
 uint32_t hexstr_to_dword(const char *hexstr, endianess_t endian)
 {
     uint32_t val;
