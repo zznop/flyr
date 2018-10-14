@@ -6,27 +6,35 @@
         "name-suffix" : "example.bin"
     },
     "blocks" : {
+        "example-length" : {
+            "class" : "length",
+            "type" : "dword"
+        },
         "example-qword" : {
+            "class" : "number",
             "type" : "qword",
             "value" : "0xf00bf00bbeefbeef",
             "endianess" : "little"
         },
         "example-byte" : {
+            "class" : "number",
             "type" : "byte",
             "value" : "0xf0"
         },
         "example-dword" :  {
+            "class" : "number",
             "type" : "dword",
             "value" : "0xcafebabe",
             "endianess" : "big"
         },
         "example-word" : {
+            "class" : "number",
             "type" : "word",
             "value" : "0x1337",
             "endianess" : "little"
         },
         "example-data" : {
-            "type" : "hex",
+            "class" : "hex",
             "value" : "4141414141414141"
         }
     },

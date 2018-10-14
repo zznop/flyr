@@ -1,5 +1,5 @@
 /**
- * parse.c
+ * load.c
  *
  * Copyright (C) 2018 zznop, zznop0x90@gmail.com
  *
@@ -7,9 +7,13 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include "load.h"
 #include "utils.h"
-#include "parse.h"
 #include "mutate.h"
+#include "parson/parson.h"
 #include <sys/stat.h>
 
 static mutations_t *init_mutations_ctx(struct json_value_t *json_root)
@@ -145,31 +149,6 @@ static output_t *init_output_ctx(struct json_value_t *json_root)
     return output;
 }
 
-void destroy_context(dud_t *ctx)
-{
-    if (ctx->blocks)
-        free(ctx->blocks);
-
-    if (ctx->output) {
-        if (ctx->output->params)
-            free(ctx->output->params);
-
-        free(ctx->output);
-    }
-
-    if (ctx->mutations)
-        free(ctx->mutations);
-
-    if (ctx->json_root)
-        json_value_free(ctx->json_root);
-
-    if (ctx->buffer.data)
-        free(ctx->buffer.data);
-
-    free(ctx);
-    ctx = NULL;
-}
-
 dud_t *load_file(const char *filepath)
 {
     const char *name = NULL;
@@ -187,7 +166,7 @@ dud_t *load_file(const char *filepath)
         "}"
     );
 
-    json_root = json_parse_file(filepath);
+    json_root = json_parse_file_with_comments(filepath);
     if (!json_root) {
         duderr("Failed to open dudley file");
         goto done;
@@ -229,6 +208,7 @@ dud_t *load_file(const char *filepath)
     ctx->name = name;
     ctx->json_root = json_root;
     ctx->blocks = blocks;
+    ctx->blocks->list = NULL;
     ctx->mutations = mutations;
     ctx->output = output;
     ctx->buffer.data = NULL;

@@ -10,6 +10,7 @@
 #include "mutate.h"
 #include "utils.h"
 #include "conversion.h"
+#include "parson/parson.h"
 
 #define BITS_IN_BYTE (8)
 #define BITFLIP(ptr, pos) \

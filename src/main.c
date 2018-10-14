@@ -12,10 +12,12 @@
 #include <string.h>
 #include <getopt.h>
 #include "utils.h"
-#include "parse.h"
+#include "dudley.h"
 #include "build.h"
 #include "mutate.h"
 #include "output.h"
+#include "load.h"
+#include "unload.h"
 
 
 static void print_help(void)

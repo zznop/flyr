@@ -3,7 +3,8 @@ Import('env')
 sources = [
     '$SRCDIR/main.c',
     '$SRCDIR/utils.c',
-    '$SRCDIR/parse.c',
+    '$SRCDIR/load.c',
+    '$SRCDIR/unload.c',
     '$SRCDIR/conversion.c',
     '$SRCDIR/build.c',
     '$SRCDIR/mutate.c',

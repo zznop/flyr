@@ -10,27 +10,31 @@
 #include "build.h"
 #include "utils.h"
 #include "conversion.h"
+#include "parson/parson.h"
 
-static int push_block(dud_t *ctx, uint8_t *start, size_t size, const char *len_field_name)
+static int push_block(const char *name, dud_t *ctx,
+    uint8_t *start, size_t size, const char *len_field_name)
 {
     struct block_metadata *curr;
     struct block_metadata *tail;
-    curr = (struct block_metadata *)calloc(1, sizeof(struct block_metadata));
+    curr = (struct block_metadata *)malloc(sizeof(*curr));
     if (!curr) {
         duderr("Out of memory");
         return FAILURE;
     }
 
+    memset(curr, '\0', sizeof(*curr));
+    curr->name = name;
     curr->start = start;
     curr->size = size;
     curr->len_field_name = len_field_name;
 
-    if (!ctx->metadata_list) {
+    if (!ctx->blocks->list) {
         // first element, set head
-        ctx->metadata_list = curr;
+        ctx->blocks->list = curr;
     } else {
         // iterate until we get to the end and set tail->next
-        tail = ctx->metadata_list;
+        tail = ctx->blocks->list;
         while (1) {
             if (!tail->next) {
                 tail->next = curr;
@@ -70,7 +74,7 @@ static int realloc_data_buffer(dud_t *ctx, size_t size)
     return SUCCESS;
 }
 
-static int consume_hexstr(struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_hexstr(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
 {
     size_t data_size = 0;
     const char *pos = NULL;
@@ -99,7 +103,7 @@ static int consume_hexstr(struct json_value_t *block_json_value, dud_t *ctx)
         pos += 2;
     }
 
-    push_block(ctx, start, data_size,
+    push_block(name, ctx, start, data_size,
         json_object_get_string(json_object(block_json_value), "len-block"));
     
     return SUCCESS;
@@ -120,7 +124,7 @@ static endianess_t get_endianess(struct json_value_t *block_json_value)
     return ERREND;
 }
 
-static int consume_qword(struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_qword(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint64_t qword;
     const char *value;
@@ -145,14 +149,14 @@ static int consume_qword(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &qword, sizeof(qword));
-    push_block(ctx, ctx->buffer.ptr, sizeof(qword),
+    push_block(name, ctx, ctx->buffer.ptr, sizeof(qword),
         json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(qword);
 
     return SUCCESS;
 }
 
-static int consume_dword(struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_dword(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint32_t dword;
     const char *value;
@@ -177,14 +181,14 @@ static int consume_dword(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &dword, sizeof(dword));
-    push_block(ctx, ctx->buffer.ptr, sizeof(dword),
+    push_block(name, ctx, ctx->buffer.ptr, sizeof(dword),
         json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(dword);
 
     return SUCCESS;
 }
 
-static int consume_word(struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_word(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint16_t word;
     const char *value;
@@ -209,14 +213,14 @@ static int consume_word(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &word, sizeof(word));
-    push_block(ctx, ctx->buffer.ptr, sizeof(word),
+    push_block(name, ctx, ctx->buffer.ptr, sizeof(word),
         json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(word);
 
     return SUCCESS;
 }
 
-static int consume_byte(struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_byte(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
 {
     uint8_t byte;
     const char *value;
@@ -237,41 +241,61 @@ static int consume_byte(struct json_value_t *block_json_value, dud_t *ctx)
         return FAILURE;
 
     memcpy(ctx->buffer.ptr, &byte, sizeof(byte));
-    push_block(ctx, ctx->buffer.ptr, sizeof(byte),
+    push_block(name, ctx, ctx->buffer.ptr, sizeof(byte),
         json_object_get_string(json_object(block_json_value), "len-block"));
     ctx->buffer.ptr += sizeof(byte);
 
     return SUCCESS;
 }
 
-static int handle_block(struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_number(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
 {
     const char *type = json_object_get_string(json_object(block_json_value), "type");
     if (!type) {
-        duderr("Failed to retrieve block type");
+        duderr("Failed to retrieve number type");
         return FAILURE;
     }
 
-    if (strstr(type, "hex"))
-        return consume_hexstr(block_json_value, ctx);
-    else if (strstr(type, "qword"))
-        return consume_qword(block_json_value, ctx);
+    if (strstr(type, "qword"))
+        return consume_qword(name, block_json_value, ctx);
     else if (strstr(type, "dword"))
-        return consume_dword(block_json_value, ctx);
+        return consume_dword(name, block_json_value, ctx);
     else if (strstr(type, "word"))
-        return consume_word(block_json_value, ctx);
+        return consume_word(name, block_json_value, ctx);
     else if (strstr(type, "byte"))
-        return consume_byte(block_json_value, ctx);
+        return consume_byte(name, block_json_value, ctx);
 
-    duderr("Unsupported block type: %s\n", type);
+    duderr("Unsupported number type: %s\n", type);
+    return FAILURE;
+}
+
+static int handle_block(const char * name, struct json_value_t *block_json_value, dud_t *ctx)
+{
+    const char *class = json_object_get_string(json_object(block_json_value), "class");
+    if (!class) {
+        duderr("Failed to retrieve block class");
+        return FAILURE;
+    }
+
+    if (strstr(class, "hex"))
+        return consume_hexstr(name, block_json_value, ctx);
+    else if (strstr(class, "number"))
+        return consume_number(name, block_json_value, ctx);
+    else if (strstr(class, "length"))
+        return SUCCESS;
+
+    duderr("Unsupported block class: %s\n", class);
     return FAILURE;
 }
 
 int iterate_blocks(dud_t *ctx)
 {
     struct json_value_t *block_json_value = NULL;
+    const char *name;
 
     for (ctx->blocks->idx = 0; ctx->blocks->idx < ctx->blocks->count; ctx->blocks->idx++) {
+        name = json_object_get_name(json_object(ctx->blocks->json_value), ctx->blocks->idx);
+        dudinfo("  -- %s", name);
         block_json_value = json_object_get_value_at(
                 json_object(ctx->blocks->json_value), ctx->blocks->idx);
         if (!block_json_value) {
@@ -279,7 +303,7 @@ int iterate_blocks(dud_t *ctx)
             return FAILURE;
         }
 
-        if (handle_block(block_json_value, ctx) == FAILURE)
+        if (handle_block(name, block_json_value, ctx) == FAILURE)
             return FAILURE;
     }
 
