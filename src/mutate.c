@@ -77,7 +77,7 @@ static int handle_mutation(struct json_value_t *action_json_value, dud_t *ctx, c
         return FAILURE;
     }
 
-    if (strstr(action, "bitflip"))
+    if (!strcmp(action, "bitflip"))
         return handle_bitflip_mutation(action_json_value, ctx, callback);
 
     duderr("Erroneous mutation action: %s", action);

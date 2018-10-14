@@ -1,6 +1,7 @@
 #ifndef _DUDLEY_H
 #define _DUDLEY_H
 
+#include "conversion.h"
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -22,18 +23,14 @@ struct output_params {
     const char *name_suffix;
 };
 
-struct length_metadata {
-    int is_length;
-    enum length_type type;
-};
-
 struct block_metadata {
     const char *name;
     uint8_t *start;
     size_t size;
     const char *len_field_name;
-    struct length_metadata len_meta;
     struct block_metadata *next;
+    enum length_type type;      /* class length blocks only */
+    endianess_t endian;         /* class length blocks only */
 };
 
 typedef struct {

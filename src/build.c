@@ -115,9 +115,9 @@ static endianess_t get_endianess(struct json_value_t *block_json_value)
     if (!value)
         return BIGEND;
 
-    if (strstr(value, "little"))
+    if (!strcmp(value, "little"))
         return LITEND;
-    else if (strstr(value, "big"))
+    else if (!strcmp(value, "big"))
         return BIGEND;
 
     duderr("Erroneous endian specification: %s", value);
@@ -256,17 +256,56 @@ static int consume_number(const char *name, struct json_value_t *block_json_valu
         return FAILURE;
     }
 
-    if (strstr(type, "qword"))
+    if (!strcmp(type, "qword"))
         return consume_qword(name, block_json_value, ctx);
-    else if (strstr(type, "dword"))
+    else if (!strcmp(type, "dword"))
         return consume_dword(name, block_json_value, ctx);
-    else if (strstr(type, "word"))
+    else if (!strcmp(type, "word"))
         return consume_word(name, block_json_value, ctx);
-    else if (strstr(type, "byte"))
+    else if (!strcmp(type, "byte"))
         return consume_byte(name, block_json_value, ctx);
 
     duderr("Unsupported number type: %s\n", type);
     return FAILURE;
+}
+
+static int reserve_length(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+{
+    const char *type;
+    endianess_t endian;
+    size_t size;
+    (void)name;
+
+    type = json_object_get_string(json_object(block_json_value), "type");
+    if (!type) {
+        duderr("Failed to parse type for length field");
+        return FAILURE;
+    }
+
+    endian = get_endianess(block_json_value);
+    (void)endian;
+
+    if (!strcmp(type, "qword")) {
+        size = sizeof(uint64_t);
+    } else if (!strcmp(type, "dword")) {
+        size = sizeof(uint32_t);
+    } else if (!strcmp(type, "word")) {
+        size = sizeof(uint16_t);
+    } else if (!strcmp(type, "byte")) {
+        size = sizeof(uint8_t);
+    } else {
+        duderr("Unsupported length type: %s", type);
+        return FAILURE;
+    }
+
+    if (realloc_data_buffer(ctx, size))
+        return FAILURE;
+
+    memset(ctx->buffer.ptr, 0, size);
+    /*push_block(name, ctx, ctx->buffer.ptr, sizeof(byte),
+        json_object_get_string(json_object(block_json_value), "len-block"));*/
+    ctx->buffer.ptr += size;
+    return SUCCESS;    
 }
 
 static int handle_block(const char * name, struct json_value_t *block_json_value, dud_t *ctx)
@@ -277,12 +316,12 @@ static int handle_block(const char * name, struct json_value_t *block_json_value
         return FAILURE;
     }
 
-    if (strstr(class, "hex"))
+    if (!strcmp(class, "hex"))
         return consume_hexstr(name, block_json_value, ctx);
-    else if (strstr(class, "number"))
+    else if (!strcmp(class, "number"))
         return consume_number(name, block_json_value, ctx);
-    else if (strstr(class, "length"))
-        return SUCCESS;
+    else if (!strcmp(class, "length"))
+        return reserve_length(name, block_json_value, ctx);
 
     duderr("Unsupported block class: %s\n", class);
     return FAILURE;
