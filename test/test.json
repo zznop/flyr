@@ -8,34 +8,49 @@
     "blocks" : {
         "example-length" : {
             "class" : "length",
-            "type" : "dword"
+            "type" : "word"
         },
         "example-qword" : {
             "class" : "number",
             "type" : "qword",
             "value" : "0xf00bf00bbeefbeef",
-            "endianess" : "little"
+            "endianess" : "little",
+            "length-blocks" : [
+                "example-length"
+            ]
         },
         "example-byte" : {
             "class" : "number",
             "type" : "byte",
-            "value" : "0xf0"
+            "value" : "0xf0",
+            "length-blocks" : [
+                "example-length"
+            ]
         },
         "example-dword" :  {
             "class" : "number",
             "type" : "dword",
             "value" : "0xcafebabe",
-            "endianess" : "big"
+            "endianess" : "big",
+            "length-blocks" : [
+                "example-length"
+            ]
         },
         "example-word" : {
             "class" : "number",
             "type" : "word",
             "value" : "0x1337",
-            "endianess" : "little"
+            "endianess" : "little",
+            "length-blocks" : [
+                "example-length"
+            ]
         },
         "example-data" : {
             "class" : "hex",
-            "value" : "4141414141414141"
+            "value" : "4141414141414141",
+            "length-blocks" : [
+                "example-length"
+            ]
         }
     },
     "mutations" : {

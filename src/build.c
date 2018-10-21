@@ -12,8 +12,9 @@
 #include "conversion.h"
 #include "parson/parson.h"
 
-static int push_block(const char *name, dud_t *ctx,
-    uint8_t *start, size_t size, const char *len_field_name)
+// TODO: a lot of arguments are being passed to this function - need to clean this up
+static int push_block(const char *name, dud_t *ctx, uint8_t *start,
+    size_t size, struct json_array_t *length_blocks, endianess_t endian)
 {
     struct block_metadata *curr;
     struct block_metadata *tail;
@@ -27,7 +28,9 @@ static int push_block(const char *name, dud_t *ctx,
     curr->name = name;
     curr->start = start;
     curr->size = size;
-    curr->len_field_name = len_field_name;
+    curr->length_blocks = length_blocks;
+    curr->next = NULL;
+    curr->endian = endian;
 
     if (!ctx->blocks->list) {
         // first element, set head
@@ -104,7 +107,7 @@ static int consume_hexstr(const char *name, struct json_value_t *block_json_valu
     }
 
     push_block(name, ctx, start, data_size,
-        json_object_get_string(json_object(block_json_value), "len-block"));
+        json_object_get_array(json_object(block_json_value), "length-blocks"), IRREND);
     
     return SUCCESS;
 }
@@ -150,7 +153,7 @@ static int consume_qword(const char *name, struct json_value_t *block_json_value
 
     memcpy(ctx->buffer.ptr, &qword, sizeof(qword));
     push_block(name, ctx, ctx->buffer.ptr, sizeof(qword),
-        json_object_get_string(json_object(block_json_value), "len-block"));
+        json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
     ctx->buffer.ptr += sizeof(qword);
 
     return SUCCESS;
@@ -182,7 +185,7 @@ static int consume_dword(const char *name, struct json_value_t *block_json_value
 
     memcpy(ctx->buffer.ptr, &dword, sizeof(dword));
     push_block(name, ctx, ctx->buffer.ptr, sizeof(dword),
-        json_object_get_string(json_object(block_json_value), "len-block"));
+        json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
     ctx->buffer.ptr += sizeof(dword);
 
     return SUCCESS;
@@ -214,7 +217,7 @@ static int consume_word(const char *name, struct json_value_t *block_json_value,
 
     memcpy(ctx->buffer.ptr, &word, sizeof(word));
     push_block(name, ctx, ctx->buffer.ptr, sizeof(word),
-        json_object_get_string(json_object(block_json_value), "len-block"));
+        json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
     ctx->buffer.ptr += sizeof(word);
 
     return SUCCESS;
@@ -242,7 +245,7 @@ static int consume_byte(const char *name, struct json_value_t *block_json_value,
 
     memcpy(ctx->buffer.ptr, &byte, sizeof(byte));
     push_block(name, ctx, ctx->buffer.ptr, sizeof(byte),
-        json_object_get_string(json_object(block_json_value), "len-block"));
+        json_object_get_array(json_object(block_json_value), "length-blocks"), IRREND);
     ctx->buffer.ptr += sizeof(byte);
 
     return SUCCESS;
@@ -256,6 +259,7 @@ static int consume_number(const char *name, struct json_value_t *block_json_valu
         return FAILURE;
     }
 
+    // TODO make this a hashmap
     if (!strcmp(type, "qword"))
         return consume_qword(name, block_json_value, ctx);
     else if (!strcmp(type, "dword"))
@@ -274,7 +278,6 @@ static int reserve_length(const char *name, struct json_value_t *block_json_valu
     const char *type;
     endianess_t endian;
     size_t size;
-    (void)name;
 
     type = json_object_get_string(json_object(block_json_value), "type");
     if (!type) {
@@ -283,8 +286,8 @@ static int reserve_length(const char *name, struct json_value_t *block_json_valu
     }
 
     endian = get_endianess(block_json_value);
-    (void)endian;
 
+    // TODO make this a map
     if (!strcmp(type, "qword")) {
         size = sizeof(uint64_t);
     } else if (!strcmp(type, "dword")) {
@@ -302,8 +305,8 @@ static int reserve_length(const char *name, struct json_value_t *block_json_valu
         return FAILURE;
 
     memset(ctx->buffer.ptr, 0, size);
-    /*push_block(name, ctx, ctx->buffer.ptr, sizeof(byte),
-        json_object_get_string(json_object(block_json_value), "len-block"));*/
+    push_block(name, ctx, ctx->buffer.ptr, size,
+        json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
     ctx->buffer.ptr += size;
     return SUCCESS;    
 }
@@ -331,7 +334,6 @@ int iterate_blocks(dud_t *ctx)
 {
     struct json_value_t *block_json_value = NULL;
     const char *name;
-
     for (ctx->blocks->idx = 0; ctx->blocks->idx < ctx->blocks->count; ctx->blocks->idx++) {
         name = json_object_get_name(json_object(ctx->blocks->json_value), ctx->blocks->idx);
         dudinfo("  -- %s", name);

@@ -27,7 +27,7 @@ struct block_metadata {
     const char *name;
     uint8_t *start;
     size_t size;
-    const char *len_field_name;
+    struct json_array_t *length_blocks;
     struct block_metadata *next;
     enum length_type type;      /* class length blocks only */
     endianess_t endian;         /* class length blocks only */
