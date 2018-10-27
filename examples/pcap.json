@@ -1,7 +1,7 @@
 {
-	"name" : "Pcap Fuzzing Model",
+    "name" : "Pcap Fuzzing Model",
 
-	/* Generate fuzzed pcap files in the current working directory */
+    /* Generate fuzzed pcap files in the current working directory */
     "output" : {
         "method" : "file-out",
         "directory-path" : "./",
