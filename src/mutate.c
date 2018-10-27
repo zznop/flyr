@@ -10,6 +10,7 @@
 #include "mutate.h"
 #include "utils.h"
 #include "conversion.h"
+#include "parson/parson.h"
 
 #define BITS_IN_BYTE (8)
 #define BITFLIP(ptr, pos) \
@@ -24,7 +25,6 @@ static int bitflip_and_invoke_callback(long start, long stop,
         saved = ctx->buffer.data[i];
         for (j = 0; j < BITS_IN_BYTE; j++) {
             BITFLIP(&ctx->buffer.data[i], j);
-
             if (callback(ctx) != SUCCESS) {
                 ctx->buffer.data[i] = saved;
                 return FAILURE;
@@ -76,7 +76,7 @@ static int handle_mutation(struct json_value_t *action_json_value, dud_t *ctx, c
         return FAILURE;
     }
 
-    if (strstr(action, "bitflip"))
+    if (!strcmp(action, "bitflip"))
         return handle_bitflip_mutation(action_json_value, ctx, callback);
 
     duderr("Erroneous mutation action: %s", action);

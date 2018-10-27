@@ -10,6 +10,7 @@
 typedef enum {
     LITEND = 0,
     BIGEND,
+    IRREND, /* irrelevant */
     ERREND
 } endianess_t;
 

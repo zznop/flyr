@@ -9,7 +9,6 @@
 
 #include "output.h"
 #include "utils.h"
-#include "parse.h"
 
 #define MAX_FILENAME_SIZE 128
 

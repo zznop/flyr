@@ -1,7 +1,7 @@
 #ifndef _MUTATE_H
 #define _MUTATE_H
 
-#include "parse.h"
+#include "dudley.h"
 
 typedef int (*callback_t)(dud_t *ctx);
 

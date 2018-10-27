@@ -1,7 +1,7 @@
 #ifndef _BUILD_H
 #define _BUILD_H
 
-#include "parse.h"
+#include "dudley.h"
 
 int iterate_blocks(dud_t *ctx);
 

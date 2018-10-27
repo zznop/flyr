@@ -1,10 +1,17 @@
-#ifndef _PARSE_H
-#define _PARSE_H
+#ifndef _DUDLEY_H
+#define _DUDLEY_H
 
-#include <string.h>
-#include <stdlib.h>
+#include "conversion.h"
 #include <stdint.h>
-#include "parson/parson.h"
+#include <stdlib.h>
+
+enum length_type {
+    UNDEF_LENGTH_TYPE = 0,
+    BYTE_LENGTH_TYPE,
+    WORD_LENGTH_TYPE,
+    DWORD_LENGTH_TYPE,
+    QWORD_LENGTH_TYPE
+};
 
 enum output_method {
     OUTPUT_UNSPECIFIED = 0,
@@ -14,6 +21,16 @@ enum output_method {
 struct output_params {
     const char *directory_path;
     const char *name_suffix;
+};
+
+struct block_metadata {
+    const char *name;
+    size_t start;
+    size_t size;
+    struct json_array_t *length_blocks;
+    struct block_metadata *next;
+    enum length_type type;      /* class length blocks only */
+    endianess_t endian;         /* class length blocks only */
 };
 
 typedef struct {
@@ -26,6 +43,7 @@ typedef struct {
     struct json_value_t *json_value;
     size_t count;
     size_t idx;
+    struct block_metadata *list;
 } blocks_t;
 
 typedef struct {
@@ -36,7 +54,7 @@ typedef struct {
 
 typedef struct {
     uint8_t *data;
-    uint8_t *ptr;
+    size_t idx;
     size_t size;
 } buffer_t;
 
