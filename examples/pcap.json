@@ -1,0 +1,219 @@
+{
+	"name" : "Pcap Fuzzing Model",
+
+	/* Generate fuzzed pcap files in the current working directory */
+    "output" : {
+        "method" : "file-out",
+        "directory-path" : "./",
+        "name-suffix" : "lolwut.pcap"
+    },
+
+    "blocks" : {
+
+    	/* Write the Pcap Header */
+
+    	"magic_number" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0xd4c3b2a1"
+    	},
+
+    	"version_major" : {
+    		"class" : "number",
+    		"type" : "word",
+    		"value" : "0x0002",
+    		"endianess" : "little"
+    	},
+
+    	"version_minor" : {
+    		"class" : "number",
+    		"type" : "word",
+    		"value" : "0x0004",
+    		"endianess" : "little"
+    	},
+
+    	"thiszone" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0x00000000"
+    	},
+
+    	"sigfigs" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0x00000000"
+    	},
+
+    	"snaplen" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0x0000ffff",
+    		"endianess" : "little"
+    	},
+
+    	"network" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0x00000001",
+    		"endianess" : "little"
+    	},
+
+    	/* Write a Pcap record */
+
+    	"ts_sec" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0x41b35e88",
+    		"endianess" : "little"
+    	},
+
+    	"ts_usec" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0x0004d80d",
+    		"endianess" : "little"
+    	},
+
+    	"incl_len" : {
+            "class" : "number",
+            "type" : "dword",
+            "value" : "0x0000013a",
+            "endianess" : "little"
+        },
+
+        "orig_len" : {
+            "class" : "number",
+            "type" : "dword",
+            "value" : "0x0000013a",
+            "endianess" : "little"
+        },
+
+        /* Write a Ethernet header */
+
+        "eth_dst" : {
+    		"class" : "hex",
+    		"value" : "ffffffffffff"
+    	},
+
+        "eth_src" : {
+    		"class" : "hex",
+    		"value" : "000b8201fc42"
+    	},
+
+    	"eth_type" : {
+    		"class" : "number",
+    		"type" : "word",
+    		"value" : "0x0800"
+    	},
+
+    	/* Write a IP Header */
+
+    	"ip_tos" : {
+    		"class" : "number",
+    		"type" : "byte",
+    		"value" : "0x45",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_diff_services" : {
+    		"class" : "number",
+    		"type" : "byte",
+    		"value" : "0x00",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_tot_len" : {
+    		"class" : "length",
+    		"type" : "word",
+    		"endianess" : "little",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_id" : {
+    		"class" : "number",
+    		"type" : "word",
+    		"value" : "0xa836",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_frag_off" : {
+    		"class" : "number",
+    		"type" : "word",
+    		"value" : "0x0000",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_ttl" : {
+    		"class" : "number",
+    		"type" : "byte",
+    		"value" : "0xfa",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_protocol" : {
+    		"class" : "number",
+    		"type" : "byte",
+    		"value" : "0x11",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_check" : {
+    		"class" : "number",
+    		"type" : "word",
+    		"value" : "0x178b",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_saddr" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0x00000000",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	"ip_daddr" : {
+    		"class" : "number",
+    		"type" : "dword",
+    		"value" : "0xffffffff",
+    		"length-blocks" : [
+                "ip_tot_len"
+            ]
+    	},
+
+    	/* Write the rest (UDP Header and payload) */
+
+    	"udp_header_and_payload" : {
+    		"class" : "hex",
+    		"value" : "004400430118591f0101060000003d1d0000000000000000000000000000000000000000000b8201fc4200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000638253633501013d0701000b8201fc4232040000000037040103062aff00000000000000",
+    	    "length-blocks" : [
+                "ip_tot_len"
+            ]
+    	}
+    },
+
+    "mutations" : {
+        "bitflip-stuff" : {
+            "action" : "bitflip",
+            "start" : "0x0",
+            "stop" : "0x20"
+        }
+    }
+}

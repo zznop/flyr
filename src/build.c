@@ -12,8 +12,123 @@
 #include "conversion.h"
 #include "parson/parson.h"
 
+static struct block_metadata *get_block_by_name(dud_t *ctx, const char *name)
+{
+    struct block_metadata *curr = ctx->blocks->list;
+    while (curr) {
+        if (!strcmp(curr->name, name)) {
+            return curr;
+        }
+
+        curr = curr->next;
+    }
+
+    return NULL;
+}
+
+static int fixup_length_block(dud_t *ctx, const char *name, size_t size)
+{
+    struct block_metadata *lenblock;
+
+    if (!name)
+        goto error;
+
+    lenblock = get_block_by_name(ctx, name);
+    if (!lenblock)
+        goto error;
+
+    // TODO: this could probably be done more elegantly with masks
+    switch (lenblock->size) {
+        case 1: {
+            *(uint8_t *)(ctx->buffer.data + lenblock->start) += size;
+            break;
+        }
+
+        case 2: {
+            uint16_t word = *(uint16_t *)(ctx->buffer.data + lenblock->start);
+            if (lenblock->endian == LITEND) {
+                word = __bswap16(word) + size;
+                word = __bswap16(word);
+            } else {
+                word += size;
+            }
+
+            *(uint16_t *)(ctx->buffer.data + lenblock->start) = word;
+            word = *(uint16_t *)(ctx->buffer.data + lenblock->start);
+            break;
+        }
+
+        case 4: {
+            uint32_t dword = *(uint32_t *)(ctx->buffer.data + lenblock->start);
+            if (lenblock->endian == LITEND) {
+                dword = __bswap32(dword) + size;
+                dword = __bswap32(dword);
+            } else {
+                dword += size;
+            }
+
+            *(uint32_t *)(ctx->buffer.data + lenblock->start) = dword;
+            break;
+        }
+
+        case 8: {
+            uint64_t qword = *(uint64_t *)(ctx->buffer.data + lenblock->start);
+            if (lenblock->endian == LITEND) {
+                qword = __bswap64(qword) + size;
+                qword = __bswap64(qword);
+            } else {
+                qword += size;
+            }
+
+            *(uint64_t *)(ctx->buffer.data + lenblock->start) = qword;
+            break;
+        }
+    }
+
+    return SUCCESS;
+error:
+    duderr("Failed to find length block for fixup: %s", name);
+    return FAILURE;
+}
+
+static int fixup_length_blocks(dud_t *ctx)
+{
+    struct block_metadata *curr;
+    size_t count, i;
+
+    if (!ctx->blocks->list) {
+        duderr("Block linked list is NULL");
+        return FAILURE;
+    }
+
+    curr = ctx->blocks->list;
+    while (curr) {
+        // Check if block is assigned length blocks
+        if (!curr->length_blocks) {
+            goto next;
+        }
+
+        // Get length block count
+        count = json_array_get_count(curr->length_blocks);
+        if (!count) {
+            duderr("Failed to get length block array count");
+            return FAILURE;
+        }
+
+        // Iterate and fixup length blocks
+        for (i = 0; i < count; i++) {
+            fixup_length_block(ctx, json_array_get_string(curr->length_blocks, i), curr->size);
+        }
+
+next:
+        curr = curr->next;
+    }
+
+    return SUCCESS;
+}
+
 // TODO: a lot of arguments are being passed to this function - need to clean this up
-static int push_block(const char *name, dud_t *ctx, uint8_t *start,
+static int push_block(const char *name, dud_t *ctx,
     size_t size, struct json_array_t *length_blocks, endianess_t endian)
 {
     struct block_metadata *curr;
@@ -26,7 +141,7 @@ static int push_block(const char *name, dud_t *ctx, uint8_t *start,
 
     memset(curr, '\0', sizeof(*curr));
     curr->name = name;
-    curr->start = start;
+    curr->start = ctx->buffer.idx;
     curr->size = size;
     curr->length_blocks = length_blocks;
     curr->next = NULL;
@@ -62,7 +177,7 @@ static int realloc_data_buffer(dud_t *ctx, size_t size)
             return FAILURE;
         }
 
-        ctx->buffer.ptr = ctx->buffer.data;
+        ctx->buffer.idx = 0;
     } else {
         tmp = realloc(ctx->buffer.data, ctx->buffer.size + size);
         if (!ctx->buffer.data) {
@@ -83,7 +198,6 @@ static int consume_hexstr(const char *name, struct json_value_t *block_json_valu
     const char *pos = NULL;
     size_t i = 0;
     const char *value;
-    uint8_t *start = ctx->buffer.ptr;
 
     value = json_object_get_string(json_object(block_json_value), "value");
     if (!value) {
@@ -101,14 +215,15 @@ static int consume_hexstr(const char *name, struct json_value_t *block_json_valu
         return FAILURE;
 
     pos = value;
-    for (i = 0; i < data_size; i++, ctx->buffer.ptr++) {
-        sscanf(pos, "%2hhx", ctx->buffer.ptr);
+    for (i = ctx->buffer.idx; i < ctx->buffer.idx + data_size; i++) {
+        sscanf(pos, "%2hhx", ctx->buffer.data + i);
         pos += 2;
     }
 
-    push_block(name, ctx, start, data_size,
+    push_block(name, ctx, data_size,
         json_object_get_array(json_object(block_json_value), "length-blocks"), IRREND);
-    
+    ctx->buffer.idx += data_size;
+
     return SUCCESS;
 }
 
@@ -151,10 +266,10 @@ static int consume_qword(const char *name, struct json_value_t *block_json_value
     if (realloc_data_buffer(ctx, sizeof(qword)))
         return FAILURE;
 
-    memcpy(ctx->buffer.ptr, &qword, sizeof(qword));
-    push_block(name, ctx, ctx->buffer.ptr, sizeof(qword),
+    memcpy(ctx->buffer.data + ctx->buffer.idx, &qword, sizeof(qword));
+    push_block(name, ctx, sizeof(qword),
         json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
-    ctx->buffer.ptr += sizeof(qword);
+    ctx->buffer.idx += sizeof(qword);
 
     return SUCCESS;
 }
@@ -175,7 +290,7 @@ static int consume_dword(const char *name, struct json_value_t *block_json_value
     }
 
     dword = hexstr_to_dword(value, endian);
-    if (dword == 0 && errno != 1) {
+    if (dword == 0 && errno != 0) {
         duderr("JSON value cannot be represented as a dword: %s", value);
         return FAILURE;
     }
@@ -183,10 +298,10 @@ static int consume_dword(const char *name, struct json_value_t *block_json_value
     if (realloc_data_buffer(ctx, sizeof(dword)))
         return FAILURE;
 
-    memcpy(ctx->buffer.ptr, &dword, sizeof(dword));
-    push_block(name, ctx, ctx->buffer.ptr, sizeof(dword),
+    memcpy(ctx->buffer.data + ctx->buffer.idx, &dword, sizeof(dword));
+    push_block(name, ctx, sizeof(dword),
         json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
-    ctx->buffer.ptr += sizeof(dword);
+    ctx->buffer.idx += sizeof(dword);
 
     return SUCCESS;
 }
@@ -215,10 +330,10 @@ static int consume_word(const char *name, struct json_value_t *block_json_value,
     if (realloc_data_buffer(ctx, sizeof(word)))
         return FAILURE;
 
-    memcpy(ctx->buffer.ptr, &word, sizeof(word));
-    push_block(name, ctx, ctx->buffer.ptr, sizeof(word),
+    memcpy(ctx->buffer.data + ctx->buffer.idx, &word, sizeof(word));
+    push_block(name, ctx, sizeof(word),
         json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
-    ctx->buffer.ptr += sizeof(word);
+    ctx->buffer.idx += sizeof(word);
 
     return SUCCESS;
 }
@@ -243,10 +358,10 @@ static int consume_byte(const char *name, struct json_value_t *block_json_value,
     if (realloc_data_buffer(ctx, sizeof(byte)))
         return FAILURE;
 
-    memcpy(ctx->buffer.ptr, &byte, sizeof(byte));
-    push_block(name, ctx, ctx->buffer.ptr, sizeof(byte),
+    memcpy(ctx->buffer.data + ctx->buffer.idx, &byte, sizeof(byte));
+    push_block(name, ctx, sizeof(byte),
         json_object_get_array(json_object(block_json_value), "length-blocks"), IRREND);
-    ctx->buffer.ptr += sizeof(byte);
+    ctx->buffer.idx += sizeof(byte);
 
     return SUCCESS;
 }
@@ -304,10 +419,10 @@ static int reserve_length(const char *name, struct json_value_t *block_json_valu
     if (realloc_data_buffer(ctx, size))
         return FAILURE;
 
-    memset(ctx->buffer.ptr, 0, size);
-    push_block(name, ctx, ctx->buffer.ptr, size,
+    memset(ctx->buffer.data + ctx->buffer.idx, 0, size);
+    push_block(name, ctx, size,
         json_object_get_array(json_object(block_json_value), "length-blocks"), endian);
-    ctx->buffer.ptr += size;
+    ctx->buffer.idx += size;
     return SUCCESS;    
 }
 
@@ -346,6 +461,11 @@ int iterate_blocks(dud_t *ctx)
 
         if (handle_block(name, block_json_value, ctx) == FAILURE)
             return FAILURE;
+    }
+
+    if (fixup_length_blocks(ctx)) {
+        duderr("Failed to fixup length blocks");
+        return FAILURE;
     }
 
     return SUCCESS;

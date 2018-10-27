@@ -25,7 +25,7 @@ struct output_params {
 
 struct block_metadata {
     const char *name;
-    uint8_t *start;
+    size_t start;
     size_t size;
     struct json_array_t *length_blocks;
     struct block_metadata *next;
@@ -54,7 +54,7 @@ typedef struct {
 
 typedef struct {
     uint8_t *data;
-    uint8_t *ptr;
+    size_t idx;
     size_t size;
 } buffer_t;
 

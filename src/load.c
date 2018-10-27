@@ -212,7 +212,7 @@ dud_t *load_file(const char *filepath)
     ctx->mutations = mutations;
     ctx->output = output;
     ctx->buffer.data = NULL;
-    ctx->buffer.ptr = NULL;
+    ctx->buffer.idx = 0;
     ctx->buffer.size = 0;
 
 done:

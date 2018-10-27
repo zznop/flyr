@@ -16,114 +16,6 @@
 #define BITFLIP(ptr, pos) \
     *ptr ^= 1UL << pos;
 
-static struct block_metadata *get_block_by_name(dud_t *ctx, const char *name)
-{
-    struct block_metadata *curr = ctx->blocks->list;
-    while (curr) {
-        if (!strcmp(curr->name, name)) {
-            return curr;
-        }
-
-        curr = curr->next;
-    }
-
-    return NULL;
-}
-
-static int fixup_length_block(dud_t *ctx, const char *name, size_t size)
-{
-    struct block_metadata *lenblock;
-
-    if (!name)
-        goto error;
-
-    lenblock = get_block_by_name(ctx, name);
-    if (!lenblock)
-        goto error;
-
-    // TODO: this could probably be done more elegantly with masks
-    switch (lenblock->size) {
-        case 1: {
-            *(uint8_t *)lenblock->start += size;
-            break;
-        }
-        case 2: {
-            uint16_t word = *(uint16_t *)lenblock->start;
-            if (lenblock->endian == LITEND) {
-                word = __bswap16(word) + size;
-                word = __bswap16(word);
-            }
-
-            printf("wtf: %04x\n", word);
-            *(uint16_t *)lenblock->start = word;
-            break;
-        }
-
-        case 4: {
-            uint32_t dword = *(uint32_t *)lenblock->start;
-            if (lenblock->endian == LITEND) {
-                dword = __bswap32(dword) + size;
-                dword = __bswap32(dword);
-            }
-
-            *(uint32_t *)lenblock->start = dword;
-            break;
-        }
-
-        case 8: {
-            uint64_t qword = *(uint64_t *)lenblock->start;
-            if (lenblock->endian == LITEND) {
-                qword = __bswap64(qword) + size;
-                qword = __bswap64(qword);
-            }
-
-            *(uint64_t *)lenblock->start = qword;
-            break;
-        }
-    }
-
-    return SUCCESS;
-error:
-    duderr("Failed to find length block for fixup: %s", name);
-    return FAILURE;
-}
-
-static int fixup_length_blocks(dud_t *ctx)
-{
-    struct block_metadata *curr;
-    size_t count, i;
-
-    if (!ctx->blocks->list) {
-        duderr("Block linked list is NULL");
-        return FAILURE;
-    }
-
-    curr = ctx->blocks->list;
-    while (curr) {
-        // Check if block is assigned length blocks
-        if (!curr->length_blocks) {
-            goto next;
-        }
-
-        // Get length block count
-        count = json_array_get_count(curr->length_blocks);
-        if (!count) {
-            duderr("Failed to get length block array count");
-            return FAILURE;
-        }
-
-        // Iterate and fixup length blocks
-        for (i = 0; i < count; i++) {
-            fixup_length_block(ctx, json_array_get_string(curr->length_blocks, i), curr->size);
-        }
-
-next:
-        curr = curr->next;
-    }
-
-    return SUCCESS;
-}
-
 static int bitflip_and_invoke_callback(long start, long stop,
     dud_t *ctx, callback_t callback)
 {
@@ -133,13 +25,6 @@ static int bitflip_and_invoke_callback(long start, long stop,
         saved = ctx->buffer.data[i];
         for (j = 0; j < BITS_IN_BYTE; j++) {
             BITFLIP(&ctx->buffer.data[i], j);
-
-            if (fixup_length_blocks(ctx)) {
-                duderr("Failed to fixup length blocks");
-                ctx->buffer.data[i] = saved;
-                return FAILURE;
-            }
-
             if (callback(ctx) != SUCCESS) {
                 ctx->buffer.data[i] = saved;
                 return FAILURE;
