@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "conversion.h"
 #include "parson/parson.h"
+#include <endian.h>
 
 static struct block_metadata *get_block_by_name(flyr_t *ctx, const char *name)
 {
