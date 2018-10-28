@@ -121,3 +121,5 @@ $ file *
 00000034-lolwut.pcap: tcpdump capture file (little-endian) - version 6.4 (Ethernet, capture length 65535)
 ...
 ```
+
+More detailed documentation for flyr lives [here](https://zznop.github.io/flyr/)
