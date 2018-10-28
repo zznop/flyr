@@ -1,8 +1,8 @@
 #ifndef _BUILD_H
 #define _BUILD_H
 
-#include "dudley.h"
+#include "flyr.h"
 
-int iterate_blocks(dud_t *ctx);
+int iterate_blocks(flyr_t *ctx);
 
 #endif

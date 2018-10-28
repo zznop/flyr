@@ -7,7 +7,7 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#include "dudley.h"
+#include "flyr.h"
 #include "parson/parson.h"
 
 static void free_block_metadata_list(struct block_metadata *list)
@@ -22,7 +22,7 @@ static void free_block_metadata_list(struct block_metadata *list)
 	}
 }
 
-void destroy_context(dud_t *ctx)
+void destroy_context(flyr_t *ctx)
 {
     if (ctx->blocks)
         free(ctx->blocks);

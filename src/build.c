@@ -12,7 +12,7 @@
 #include "conversion.h"
 #include "parson/parson.h"
 
-static struct block_metadata *get_block_by_name(dud_t *ctx, const char *name)
+static struct block_metadata *get_block_by_name(flyr_t *ctx, const char *name)
 {
     struct block_metadata *curr = ctx->blocks->list;
     while (curr) {
@@ -26,7 +26,7 @@ static struct block_metadata *get_block_by_name(dud_t *ctx, const char *name)
     return NULL;
 }
 
-static int fixup_length_block(dud_t *ctx, const char *name, size_t size)
+static int fixup_length_block(flyr_t *ctx, const char *name, size_t size)
 {
     struct block_metadata *lenblock;
 
@@ -87,17 +87,17 @@ static int fixup_length_block(dud_t *ctx, const char *name, size_t size)
 
     return SUCCESS;
 error:
-    duderr("Failed to find length block for fixup: %s", name);
+    err("Failed to find length block for fixup: %s", name);
     return FAILURE;
 }
 
-static int fixup_length_blocks(dud_t *ctx)
+static int fixup_length_blocks(flyr_t *ctx)
 {
     struct block_metadata *curr;
     size_t count, i;
 
     if (!ctx->blocks->list) {
-        duderr("Block linked list is NULL");
+        err("Block linked list is NULL");
         return FAILURE;
     }
 
@@ -111,7 +111,7 @@ static int fixup_length_blocks(dud_t *ctx)
         // Get length block count
         count = json_array_get_count(curr->length_blocks);
         if (!count) {
-            duderr("Failed to get length block array count");
+            err("Failed to get length block array count");
             return FAILURE;
         }
 
@@ -128,14 +128,14 @@ next:
 }
 
 // TODO: a lot of arguments are being passed to this function - need to clean this up
-static int push_block(const char *name, dud_t *ctx,
+static int push_block(const char *name, flyr_t *ctx,
     size_t size, struct json_array_t *length_blocks, endianess_t endian)
 {
     struct block_metadata *curr;
     struct block_metadata *tail;
     curr = (struct block_metadata *)malloc(sizeof(*curr));
     if (!curr) {
-        duderr("Out of memory");
+        err("Out of memory");
         return FAILURE;
     }
 
@@ -166,14 +166,14 @@ static int push_block(const char *name, dud_t *ctx,
     return SUCCESS;
 }
 
-static int realloc_data_buffer(dud_t *ctx, size_t size)
+static int realloc_data_buffer(flyr_t *ctx, size_t size)
 {
     uint8_t *tmp = NULL;
 
     if (!ctx->buffer.data) {
         ctx->buffer.data = (uint8_t *)malloc(size);
         if (!ctx->buffer.data) {
-            duderr("Out of memory");
+            err("Out of memory");
             return FAILURE;
         }
 
@@ -181,7 +181,7 @@ static int realloc_data_buffer(dud_t *ctx, size_t size)
     } else {
         tmp = realloc(ctx->buffer.data, ctx->buffer.size + size);
         if (!ctx->buffer.data) {
-            duderr("Out of memory");
+            err("Out of memory");
             return FAILURE;
         }
 
@@ -192,7 +192,7 @@ static int realloc_data_buffer(dud_t *ctx, size_t size)
     return SUCCESS;
 }
 
-static int consume_hexstr(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_hexstr(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     size_t data_size = 0;
     const char *pos = NULL;
@@ -201,12 +201,12 @@ static int consume_hexstr(const char *name, struct json_value_t *block_json_valu
 
     value = json_object_get_string(json_object(block_json_value), "value");
     if (!value) {
-        duderr("Failed to read data from block");
+        err("Failed to read data from block");
         return FAILURE;
     }
 
     if (value[strspn(value, "0123456789abcdefABCDEF")]) {
-        duderr("Input data is not a valid hex string");
+        err("Input data is not a valid hex string");
         return FAILURE;
     }
 
@@ -238,11 +238,11 @@ static endianess_t get_endianess(struct json_value_t *block_json_value)
     else if (!strcmp(value, "big"))
         return BIGEND;
 
-    duderr("Erroneous endian specification: %s", value);
+    err("Erroneous endian specification: %s", value);
     return ERREND;
 }
 
-static int consume_qword(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_qword(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     uint64_t qword;
     const char *value;
@@ -253,13 +253,13 @@ static int consume_qword(const char *name, struct json_value_t *block_json_value
 
     value = json_object_get_string(json_object(block_json_value), "value");
     if (!value) {
-        duderr("Failed to retrieve dword value from block");
+        err("Failed to retrieve dword value from block");
         return FAILURE;
     }
 
     qword = hexstr_to_qword(value, endian);
     if (qword == 0 && errno != 1) {
-        duderr("JSON value cannot be represented as a qword: %s", value);
+        err("JSON value cannot be represented as a qword: %s", value);
         return FAILURE;
     }
 
@@ -274,7 +274,7 @@ static int consume_qword(const char *name, struct json_value_t *block_json_value
     return SUCCESS;
 }
 
-static int consume_dword(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_dword(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     uint32_t dword;
     const char *value;
@@ -285,13 +285,13 @@ static int consume_dword(const char *name, struct json_value_t *block_json_value
 
     value = json_object_get_string(json_object(block_json_value), "value");
     if (!value) {
-        duderr("Failed to retrieve dword value from block");
+        err("Failed to retrieve dword value from block");
         return FAILURE;
     }
 
     dword = hexstr_to_dword(value, endian);
     if (dword == 0 && errno != 0) {
-        duderr("JSON value cannot be represented as a dword: %s", value);
+        err("JSON value cannot be represented as a dword: %s", value);
         return FAILURE;
     }
 
@@ -306,7 +306,7 @@ static int consume_dword(const char *name, struct json_value_t *block_json_value
     return SUCCESS;
 }
 
-static int consume_word(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_word(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     uint16_t word;
     const char *value;
@@ -317,13 +317,13 @@ static int consume_word(const char *name, struct json_value_t *block_json_value,
 
     value = json_object_get_string(json_object(block_json_value), "value");
     if (!value) {
-        duderr("Failed to retrieve dword value from block");
+        err("Failed to retrieve dword value from block");
         return FAILURE;
     }
 
     word = hexstr_to_word(value, endian);
     if (word == 0 && errno != 0) {
-        duderr("JSON value cannot be represented as a word: %s", value);
+        err("JSON value cannot be represented as a word: %s", value);
         return FAILURE;
     }
 
@@ -338,20 +338,20 @@ static int consume_word(const char *name, struct json_value_t *block_json_value,
     return SUCCESS;
 }
 
-static int consume_byte(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_byte(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     uint8_t byte;
     const char *value;
 
     value = json_object_get_string(json_object(block_json_value), "value");
     if (!value) {
-        duderr("Failed to retrieve byte value from block");
+        err("Failed to retrieve byte value from block");
         return FAILURE;
     }
 
     byte = hexstr_to_byte(value);
     if (byte == 0 && errno != 0) {
-        duderr("JSON value cannot be converted to a byte: %s", value);
+        err("JSON value cannot be converted to a byte: %s", value);
         return FAILURE;
     }
 
@@ -366,11 +366,11 @@ static int consume_byte(const char *name, struct json_value_t *block_json_value,
     return SUCCESS;
 }
 
-static int consume_number(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+static int consume_number(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     const char *type = json_object_get_string(json_object(block_json_value), "type");
     if (!type) {
-        duderr("Failed to retrieve number type");
+        err("Failed to retrieve number type");
         return FAILURE;
     }
 
@@ -384,11 +384,11 @@ static int consume_number(const char *name, struct json_value_t *block_json_valu
     else if (!strcmp(type, "byte"))
         return consume_byte(name, block_json_value, ctx);
 
-    duderr("Unsupported number type: %s\n", type);
+    err("Unsupported number type: %s\n", type);
     return FAILURE;
 }
 
-static int reserve_length(const char *name, struct json_value_t *block_json_value, dud_t *ctx)
+static int reserve_length(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     const char *type;
     endianess_t endian;
@@ -396,7 +396,7 @@ static int reserve_length(const char *name, struct json_value_t *block_json_valu
 
     type = json_object_get_string(json_object(block_json_value), "type");
     if (!type) {
-        duderr("Failed to parse type for length field");
+        err("Failed to parse type for length field");
         return FAILURE;
     }
 
@@ -412,7 +412,7 @@ static int reserve_length(const char *name, struct json_value_t *block_json_valu
     } else if (!strcmp(type, "byte")) {
         size = sizeof(uint8_t);
     } else {
-        duderr("Unsupported length type: %s", type);
+        err("Unsupported length type: %s", type);
         return FAILURE;
     }
 
@@ -426,11 +426,11 @@ static int reserve_length(const char *name, struct json_value_t *block_json_valu
     return SUCCESS;    
 }
 
-static int handle_block(const char * name, struct json_value_t *block_json_value, dud_t *ctx)
+static int handle_block(const char * name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
     const char *class = json_object_get_string(json_object(block_json_value), "class");
     if (!class) {
-        duderr("Failed to retrieve block class");
+        err("Failed to retrieve block class");
         return FAILURE;
     }
 
@@ -441,21 +441,21 @@ static int handle_block(const char * name, struct json_value_t *block_json_value
     else if (!strcmp(class, "length"))
         return reserve_length(name, block_json_value, ctx);
 
-    duderr("Unsupported block class: %s\n", class);
+    err("Unsupported block class: %s\n", class);
     return FAILURE;
 }
 
-int iterate_blocks(dud_t *ctx)
+int iterate_blocks(flyr_t *ctx)
 {
     struct json_value_t *block_json_value = NULL;
     const char *name;
     for (ctx->blocks->idx = 0; ctx->blocks->idx < ctx->blocks->count; ctx->blocks->idx++) {
         name = json_object_get_name(json_object(ctx->blocks->json_value), ctx->blocks->idx);
-        dudinfo("  -- %s", name);
+        info("  -- %s", name);
         block_json_value = json_object_get_value_at(
                 json_object(ctx->blocks->json_value), ctx->blocks->idx);
         if (!block_json_value) {
-            duderr("Failed to retrieve next JSON block (idx: %lu", ctx->blocks->idx);
+            err("Failed to retrieve next JSON block (idx: %lu", ctx->blocks->idx);
             return FAILURE;
         }
 
@@ -464,7 +464,7 @@ int iterate_blocks(dud_t *ctx)
     }
 
     if (fixup_length_blocks(ctx)) {
-        duderr("Failed to fixup length blocks");
+        err("Failed to fixup length blocks");
         return FAILURE;
     }
 

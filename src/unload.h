@@ -1,8 +1,8 @@
 #ifndef _UNLOAD_H
 #define _UNLOAD_H
 
-#include "dudley.h"
+#include "flyr.h"
 
-void destroy_context(dud_t *ctx);
+void destroy_context(flyr_t *ctx);
 
 #endif

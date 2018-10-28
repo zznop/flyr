@@ -8,7 +8,7 @@
 #define FAILURE 1
 #define SUCCESS 0
 
-void dudinfo(const char *fmt, ...);
-void duderr(const char *fmt, ...);
+void info(const char *fmt, ...);
+void err(const char *fmt, ...);
 
 #endif

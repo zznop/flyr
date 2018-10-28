@@ -10,7 +10,7 @@
 #include "utils.h"
 #define LOG_BUF_SIZE (256)
 
-void dudinfo(const char *fmt, ...)
+void info(const char *fmt, ...)
 {
     va_list ap;
     char buf[LOG_BUF_SIZE];
@@ -21,7 +21,7 @@ void dudinfo(const char *fmt, ...)
     fprintf(stdout, "* %s\n", buf);
 }
 
-void duderr(const char *fmt, ...)
+void err(const char *fmt, ...)
 {
     va_list ap;
     char buf[LOG_BUF_SIZE];

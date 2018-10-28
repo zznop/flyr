@@ -14,7 +14,7 @@
 
 static size_t count = 0;
 
-static int output_data_to_file(dud_t *ctx)
+static int output_data_to_file(flyr_t *ctx)
 {
     char filename[MAX_FILENAME_SIZE];
     FILE *file = NULL;
@@ -27,12 +27,12 @@ static int output_data_to_file(dud_t *ctx)
 
     file = fopen(filename, "wb");
     if (!file) {
-        duderr("Failed to open file: %s", filename);
+        err("Failed to open file: %s", filename);
         goto out;
     }
 
     if (fwrite(ctx->buffer.data, sizeof(uint8_t), ctx->buffer.size, file) != ctx->buffer.size) {
-        duderr("Failed to write to file");
+        err("Failed to write to file");
         goto out;
     }
 
@@ -46,7 +46,7 @@ out:
     return ret;
 }
 
-int output_mutated_data(dud_t *ctx)
+int output_mutated_data(flyr_t *ctx)
 {
     switch (ctx->output->method) {
     case OUTPUT_FILEOUT:

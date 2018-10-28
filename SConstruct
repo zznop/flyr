@@ -33,7 +33,7 @@ release_env.Append(
 envs.append(release_env)
 
 for env in envs:
-    dudley = SConscript(
+    flyr = SConscript(
         './SConscript',
         variant_dir=env['BUILDROOT'] + "/" + env["MODE"],
         exports='env',

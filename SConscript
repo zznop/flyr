@@ -12,9 +12,9 @@ sources = [
     '$SRCDIR/parson/parson.c',
 ]
 
-dudley = env.Program(
-    'dudley',
+flyr = env.Program(
+    'flyr',
     source = sources,
 )
 
-Return('dudley')
+Return('flyr')

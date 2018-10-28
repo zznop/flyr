@@ -1,5 +1,5 @@
-#ifndef _DUDLEY_H
-#define _DUDLEY_H
+#ifndef _FLYR_H
+#define _FLYR_H
 
 #include "conversion.h"
 #include <stdint.h>
@@ -65,9 +65,9 @@ typedef struct {
     mutations_t *mutations;
     output_t *output;
     buffer_t buffer;
-} dud_t;
+} flyr_t;
 
-dud_t *load_file(const char *filepath);
-void destroy_context(dud_t *ctx);
+flyr_t *load_file(const char *filepath);
+void destroy_context(flyr_t *ctx);
 
 #endif

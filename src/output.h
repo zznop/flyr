@@ -1,8 +1,8 @@
 #ifndef _OUTPUT_H
 #define _OUTPUT_H
 
-#include "dudley.h"
+#include "flyr.h"
 
-int output_mutated_data(dud_t *ctx);
+int output_mutated_data(flyr_t *ctx);
 
 #endif

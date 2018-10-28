@@ -6,4 +6,4 @@ if [ $# -eq 0 ]
     tag=$1
 fi
 
-docker build -t dudley-build:$tag .
+docker build -t flyr-build:$tag .

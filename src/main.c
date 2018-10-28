@@ -12,7 +12,7 @@
 #include <string.h>
 #include <getopt.h>
 #include "utils.h"
-#include "dudley.h"
+#include "flyr.h"
 #include "build.h"
 #include "mutate.h"
 #include "output.h"
@@ -23,8 +23,8 @@
 static void print_help(void)
 {
     printf(
-        "./dudley [options] -f [file]\n"
-        "-f FILE    Path to dudley JSON formatted fuzzing model\n"
+        "./flyr [options] -f [file]\n"
+        "-f FILE    Path to flyr JSON formatted fuzzing model\n"
     );
 }
 
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 {
     int opt = 0;
     char *filepath = NULL;
-    dud_t *ctx = NULL;
+    flyr_t *ctx = NULL;
     int ret = FAILURE;
 
     if (argc < 2) {
@@ -56,24 +56,24 @@ int main(int argc, char **argv)
     }
 
     if (!filepath) {
-        duderr("you must supply a filepath");
+        err("you must supply a filepath");
         goto out;
     }
 
-    dudinfo("Loading dudley file and validating the JSON schema");
+    info("Loading flyr file and validating the JSON schema");
     ctx = load_file(filepath);
     if (!ctx)
         goto out;
 
-    dudinfo("Applying build actions...");
+    info("Applying build actions...");
     if (iterate_blocks(ctx) == FAILURE)
         goto out;
 
-    dudinfo("Processing mutations...");
+    info("Processing mutations...");
     if (iterate_mutations(ctx, output_mutated_data) == FAILURE)
         goto out;
 
-    dudinfo("Done.");
+    info("Done.");
     ret = SUCCESS;
 out:
     if (ctx)

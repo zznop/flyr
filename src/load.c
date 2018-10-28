@@ -20,19 +20,19 @@ static mutations_t *init_mutations_ctx(struct json_value_t *json_root)
 {
     mutations_t *mutations = (mutations_t *)malloc(sizeof(mutations_t));
     if (!mutations) {
-        duderr("Out of memory");
+        err("Out of memory");
         return NULL;
     }
 
     mutations->json_value = json_object_get_value(json_object(json_root), "mutations");
     if (!mutations->json_value) {
-        duderr("Failed to retrieve \"mutations\" JSON value");
+        err("Failed to retrieve \"mutations\" JSON value");
         return NULL;
     }
 
     mutations->count = json_object_get_count(json_object(mutations->json_value));
     if (!mutations->count) {
-        duderr("Failed to retrieve \"mutations\" JSON value");
+        err("Failed to retrieve \"mutations\" JSON value");
         return NULL;
     }
 
@@ -44,19 +44,19 @@ static blocks_t *init_blocks_ctx(struct json_value_t *json_root)
 {
     blocks_t *blocks = (blocks_t *)malloc(sizeof(blocks_t));
     if (!blocks) {
-        duderr("Out of memory");
+        err("Out of memory");
         return NULL;
     }
 
     blocks->json_value = json_object_get_value(json_object(json_root), "blocks");
     if (!blocks->json_value) {
-        duderr("Failed to retrieve \"blocks\" JSON value");
+        err("Failed to retrieve \"blocks\" JSON value");
         return NULL;
     }
 
     blocks->count = json_object_get_count(json_object(blocks->json_value));
     if (!blocks->count) {
-        duderr("Failed to get blocks count");
+        err("Failed to get blocks count");
         return NULL;
     }
 
@@ -75,25 +75,25 @@ static output_t *set_output_params(struct json_value_t *json_output_value)
     directory_path = json_object_get_string(
             json_object(json_output_value), "directory-path");
     if (!directory_path) {
-        duderr("Export directory path not supplied: \"directory-path\"");
+        err("Export directory path not supplied: \"directory-path\"");
         goto fail;
     }
 
     if (stat(directory_path, &st) == -1) {
-        duderr("Directory does not exist: %s", directory_path);
+        err("Directory does not exist: %s", directory_path);
         goto fail;
     }
 
     name_suffix = json_object_get_string(
             json_object(json_output_value), "name-suffix");
     if (!name_suffix) {
-        duderr("Name suffix for exported files not supplied: \"name-suffix\"");
+        err("Name suffix for exported files not supplied: \"name-suffix\"");
         goto fail;
     }
 
     fout_params = (struct output_params *)malloc(sizeof(struct output_params));
     if (!fout_params) {
-        duderr("Out of memory");
+        err("Out of memory");
         goto fail;
     }
 
@@ -102,7 +102,7 @@ static output_t *set_output_params(struct json_value_t *json_output_value)
 
     output = (output_t *)malloc(sizeof(output_t));
     if (!output) {
-        duderr("Out of memory");
+        err("Out of memory");
         goto fail;
     }
 
@@ -129,34 +129,34 @@ static output_t *init_output_ctx(struct json_value_t *json_root)
 
     json_output_value = json_object_get_value(json_object(json_root), "output");
     if (!json_output_value) {
-        duderr("failed to parse JSON output value");
+        err("failed to parse JSON output value");
         return NULL;
     }
 
     method = json_object_get_string(json_object(json_output_value), "method");
     if (!method) {
-        duderr("output method was not specified");
+        err("output method was not specified");
         return NULL;
     }
 
     if (!strcmp(method, "file-out")) {
         output = set_output_params(json_output_value);
     } else {
-        duderr("unsupported export method: %s", method);
+        err("unsupported export method: %s", method);
         return NULL;
     }
 
     return output;
 }
 
-dud_t *load_file(const char *filepath)
+flyr_t *load_file(const char *filepath)
 {
     const char *name = NULL;
     struct json_value_t *json_root = NULL;
     output_t *output = NULL;
     mutations_t *mutations = NULL;
     blocks_t *blocks = NULL;
-    dud_t *ctx = NULL;
+    flyr_t *ctx = NULL;
     struct json_value_t *schema = json_parse_string(
         "{"
             "\"name\":\"\","
@@ -168,40 +168,40 @@ dud_t *load_file(const char *filepath)
 
     json_root = json_parse_file_with_comments(filepath);
     if (!json_root) {
-        duderr("Failed to open dudley file");
+        err("Failed to open flyr file");
         goto done;
     }
 
     if (json_validate(schema, json_root) != JSONSuccess) {
-        duderr("Erroneous JSON schema");
+        err("Erroneous JSON schema");
         json_value_free(json_root);
         goto done;
     }
 
     name = json_object_get_string(json_object(json_root), "name");
-    dudinfo("%s (%s) loaded successfully!", filepath, name);
+    info("%s (%s) loaded successfully!", filepath, name);
 
     output = init_output_ctx(json_root);
     if (!output) {
-        duderr("Failed to parse the output parameters");
+        err("Failed to parse the output parameters");
         goto done;
     }
 
     blocks = init_blocks_ctx(json_root);
     if (!blocks) {
-        duderr("Failed to initialize the blocks handler");
+        err("Failed to initialize the blocks handler");
         goto done;
     }
 
     mutations = init_mutations_ctx(json_root);
     if (!mutations) {
-        duderr("Failed to initialize the mutations handler");
+        err("Failed to initialize the mutations handler");
         goto done;
     }
 
-    ctx = (dud_t *)malloc(sizeof(dud_t));
+    ctx = (flyr_t *)malloc(sizeof(flyr_t));
     if (!ctx) {
-        duderr("Out of memory");
+        err("Out of memory");
         goto done;
     }
 
