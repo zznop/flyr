@@ -35,7 +35,7 @@ your command with `scuba`.
 ## Getting Started
 
 ```
-cat ./examples/pcap.json
+$ cat ./examples/pcap.json
 
 {
     "name" : "Pcap Fuzzing Model",
