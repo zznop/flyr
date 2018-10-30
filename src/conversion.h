@@ -7,6 +7,17 @@
 #include <byteswap.h>
 #include <stdlib.h>
 
+//added fix to handle different OS byteswap defines
+#ifndef __bswap16
+#define __bswap16 __bswap_16
+#endif
+#ifndef __bswap32
+#define __bswap32 __bswap_32
+#endif
+#ifndef __bswap64
+#define __bswap64 __bswap_64
+#endif
+
 typedef enum {
     LITEND = 0,
     BIGEND,
