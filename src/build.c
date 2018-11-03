@@ -196,7 +196,7 @@ static int realloc_data_buffer(flyr_t *ctx, size_t size)
 
 static int consume_hexstr(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
 {
-    size_t data_size = 0;
+    size_t size = 0;
     const char *pos = NULL;
     size_t i = 0;
     const char *value;
@@ -212,19 +212,42 @@ static int consume_hexstr(const char *name, struct json_value_t *block_json_valu
         return FAILURE;
     }
 
-    data_size = strlen(value) / 2;
-    if (realloc_data_buffer(ctx, data_size))
+    size = strlen(value) / 2;
+    if (realloc_data_buffer(ctx, size))
         return FAILURE;
 
     pos = value;
-    for (i = ctx->buffer.idx; i < ctx->buffer.idx + data_size; i++) {
+    for (i = ctx->buffer.idx; i < ctx->buffer.idx + size; i++) {
         sscanf(pos, "%2hhx", ctx->buffer.data + i);
         pos += 2;
     }
 
-    push_block(name, ctx, data_size,
+    push_block(name, ctx, size,
         json_object_get_array(json_object(block_json_value), "length-blocks"), IRREND);
-    ctx->buffer.idx += data_size;
+    ctx->buffer.idx += size;
+
+    return SUCCESS;
+}
+
+static int consume_string(const char *name, struct json_value_t *block_json_value, flyr_t *ctx)
+{
+    const char *value;
+    size_t size;
+
+    value = json_object_get_string(json_object(block_json_value), "value");
+    if (!value) {
+        err("Failed to retrieve value from string block");
+        return FAILURE;
+    }
+
+    size = strlen(value) + 1; // Include the NULL terminator
+    if (realloc_data_buffer(ctx, size))
+        return FAILURE;
+
+    strcpy((char *)ctx->buffer.data + ctx->buffer.idx, value);
+    push_block(name, ctx, size,
+        json_object_get_array(json_object(block_json_value), "length-blocks"), IRREND);
+    ctx->buffer.idx += size;
 
     return SUCCESS;
 }
@@ -438,6 +461,8 @@ static int handle_block(const char * name, struct json_value_t *block_json_value
 
     if (!strcmp(class, "hex"))
         return consume_hexstr(name, block_json_value, ctx);
+    else if (!strcmp(class, "string"))
+        return consume_string(name, block_json_value, ctx);
     else if (!strcmp(class, "number"))
         return consume_number(name, block_json_value, ctx);
     else if (!strcmp(class, "length"))
