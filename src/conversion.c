@@ -11,17 +11,6 @@
 #include <errno.h>
 #include "conversion.h"
 
-// Required for certain Linux distros
-#ifndef __bswap16
-#define __bswap16 __bswap_16
-#endif
-#ifndef __bswap32
-#define __bswap32 __bswap_32
-#endif
-#ifndef __bswap64
-#define __bswap64 __bswap_64
-#endif
-
 long hexstr_to_long(const char *hexstr)
 {
     if (!hexstr) {
