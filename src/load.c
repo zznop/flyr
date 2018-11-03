@@ -10,11 +10,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #include "load.h"
+#include "output.h"
 #include "utils.h"
 #include "mutate.h"
 #include "parson/parson.h"
-#include <sys/stat.h>
 
 static mutations_t *init_mutations_ctx(struct json_value_t *json_root)
 {
