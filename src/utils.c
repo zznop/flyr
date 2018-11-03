@@ -7,7 +7,11 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 #include "utils.h"
+
 #define LOG_BUF_SIZE (256)
 
 void info(const char *fmt, ...)

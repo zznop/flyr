@@ -7,14 +7,20 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#include <errno.h>
+#include <string.h>
 #include "mutate.h"
 #include "utils.h"
-#include "conversion.h"
 #include "parson/parson.h"
 
 #define BITS_IN_BYTE (8)
 #define BITFLIP(ptr, pos) \
     *ptr ^= 1UL << pos;
+
+typedef struct {
+    size_t start;
+    size_t stop;
+} bitflip_t;
 
 static int bitflip_and_invoke_callback(long start, long stop,
     flyr_t *ctx, callback_t callback)

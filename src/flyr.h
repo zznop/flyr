@@ -1,22 +1,9 @@
 #ifndef _FLYR_H
 #define _FLYR_H
 
-#include "conversion.h"
 #include <stdint.h>
 #include <stdlib.h>
-
-enum length_type {
-    UNDEF_LENGTH_TYPE = 0,
-    BYTE_LENGTH_TYPE,
-    WORD_LENGTH_TYPE,
-    DWORD_LENGTH_TYPE,
-    QWORD_LENGTH_TYPE
-};
-
-enum output_method {
-    OUTPUT_UNSPECIFIED = 0,
-    OUTPUT_FILEOUT
-};
+#include "conversion.h"
 
 struct output_params {
     const char *directory_path;

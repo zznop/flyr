@@ -7,11 +7,11 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#include <stdio.h>
 #include "output.h"
 #include "utils.h"
 
 #define MAX_FILENAME_SIZE 128
-
 static size_t count = 0;
 
 static int output_data_to_file(flyr_t *ctx)

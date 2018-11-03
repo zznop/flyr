@@ -2,21 +2,7 @@
 #define _CONVERSION_H
 
 #include <stdint.h>
-#include <limits.h>
-#include <errno.h>
 #include <byteswap.h>
-#include <stdlib.h>
-
-//added fix to handle different OS byteswap defines
-#ifndef __bswap16
-#define __bswap16 __bswap_16
-#endif
-#ifndef __bswap32
-#define __bswap32 __bswap_32
-#endif
-#ifndef __bswap64
-#define __bswap64 __bswap_64
-#endif
 
 typedef enum {
     LITEND = 0,
@@ -24,6 +10,14 @@ typedef enum {
     IRREND, /* irrelevant */
     ERREND
 } endianess_t;
+
+enum length_type {
+    UNDEF_LENGTH_TYPE = 0,
+    BYTE_LENGTH_TYPE,
+    WORD_LENGTH_TYPE,
+    DWORD_LENGTH_TYPE,
+    QWORD_LENGTH_TYPE
+};
 
 long hexstr_to_long(const char *hexstr);
 uint8_t hexstr_to_byte(const char *hexstr);

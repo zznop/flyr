@@ -7,11 +7,12 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include "build.h"
 #include "utils.h"
-#include "conversion.h"
 #include "parson/parson.h"
-#include <endian.h>
 
 static struct block_metadata *get_block_by_name(flyr_t *ctx, const char *name)
 {
