@@ -213,7 +213,7 @@
         "bitflip-stuff" : {
             "action" : "bitflip",
             "start" : "0x0",
-            "stop" : "0x20"
+            "stop" : "0x1"
         }
     }
 }
