@@ -1,8 +1,6 @@
 language: c
 os: linux
 compiler: gcc
-
-before_install:
-  - script: scons -j 8
-
-script: ./autotest.sh
+script:
+  - scons -j 8
+  - ./autotest.sh
