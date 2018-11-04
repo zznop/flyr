@@ -1,8 +1,8 @@
-# fuzz light year (flyr)
+# fuzz lightyear (flyr) [![Build Status](https://travis-ci.org/zznop/flyr.svg?branch=master)](https://travis-ci.org/zznop/flyr)
 
 ## Description
 
-fuzz light year is a block-based software fuzzing framework
+fuzz lightyear is a block-based software fuzzing framework
 
 ## Building flyr
 
