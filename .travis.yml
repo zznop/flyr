@@ -4,3 +4,4 @@ compiler: gcc
 script:
   - scons -j 8
   - ./autotest.sh
+  
