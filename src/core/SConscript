@@ -1,0 +1,20 @@
+Import('env')
+
+sources = [
+    'main.c',
+    'utils.c',
+    'load.c',
+    'unload.c',
+    'conversion.c',
+    'build.c',
+    'mutate.c',
+    'output.c',
+    'parson/parson.c',
+]
+
+flyr = env.Program(
+    'flyr',
+    source = sources,
+)
+
+Return('flyr')

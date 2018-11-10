@@ -1,6 +1,6 @@
 #!/bin/bash
 
-release_build="./build/release/flyr"
+release_build="./build/release/core/flyr"
 example_json="./examples/pcap.json"
 retval=0
 

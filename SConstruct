@@ -34,7 +34,15 @@ envs.append(release_env)
 
 for env in envs:
     flyr = SConscript(
-        './SConscript',
-        variant_dir=env['BUILDROOT'] + "/" + env["MODE"],
+        './src/core/SConscript',
+        variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/core",
+        duplicate=False,
+        exports='env',
+    )
+
+    flyr_crash = SConscript(
+        './src/crash-harnesses/linux/x86-64/SConscript',
+        variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/crash",
+        duplicate=False,
         exports='env',
     )

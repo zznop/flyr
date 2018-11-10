@@ -1,0 +1,13 @@
+Import('env')
+
+sources = [
+    'main.c',
+    'utils.c',
+]
+
+flyr_crash = env.Program(
+    'flyr-crash',
+    source = sources,
+)
+
+Return('flyr_crash')
