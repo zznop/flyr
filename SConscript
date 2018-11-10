@@ -1,15 +1,15 @@
 Import('env')
 
 sources = [
-    '$SRCDIR/main.c',
-    '$SRCDIR/utils.c',
-    '$SRCDIR/load.c',
-    '$SRCDIR/unload.c',
-    '$SRCDIR/conversion.c',
-    '$SRCDIR/build.c',
-    '$SRCDIR/mutate.c',
-    '$SRCDIR/output.c',
-    '$SRCDIR/parson/parson.c',
+    '$SRCDIR/core/main.c',
+    '$SRCDIR/core/utils.c',
+    '$SRCDIR/core/load.c',
+    '$SRCDIR/core/unload.c',
+    '$SRCDIR/core/conversion.c',
+    '$SRCDIR/core/build.c',
+    '$SRCDIR/core/mutate.c',
+    '$SRCDIR/core/output.c',
+    '$SRCDIR/core/parson/parson.c',
 ]
 
 flyr = env.Program(
