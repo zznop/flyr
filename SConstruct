@@ -41,7 +41,7 @@ for env in envs:
     )
 
     flyr_crash = SConscript(
-        './src/crash-harnesses/linux/x86-64/SConscript',
+        './src/crash-harness/linux/x86-64/SConscript',
         variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/crash",
         duplicate=False,
         exports='env',
