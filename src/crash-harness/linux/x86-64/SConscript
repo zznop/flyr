@@ -1,15 +1,11 @@
 Import('env')
 
-crash_harness_env = env.Clone(
-	CPPDEFINES = "_POSIX_SOURCE",
-)
-
 sources = [
     'main.c',
     'utils.c',
 ]
 
-flyr_crash = crash_harness_env.Program(
+flyr_crash = env.Program(
     'flyr-crash',
     source = sources,
 )
