@@ -19,12 +19,21 @@
 #include <stdint.h>
 #include <errno.h>
 #include <ctype.h>
+#include <signal.h>
 #include "utils.h"
+#include "hooks.h"
 
 #define ELF_MAGIC 0x464c457f
 
 extern char **environ;
 static bool _continue = 1;
+struct syshooks _hookops[] = {
+    {
+        .sysnum = __NR_mmap,
+        .callback = &mmap_hook
+    }
+};
+
 
 static void dump_elf_base(pid_t pid, uint64_t addr)
 {
@@ -80,7 +89,6 @@ static void dump_reg_memory(pid_t pid, uint64_t addr)
 static void display_crash_dump(pid_t pid)
 {
     struct user_regs_struct regs;
-    memset(&regs, '\0', sizeof(regs));
     ptrace(PTRACE_GETREGS, pid, NULL, &regs);
     dump_elf_base(pid, regs.rip);
     printf("rax    : %016llx", regs.rax);
@@ -127,6 +135,10 @@ static void display_crash_dump(pid_t pid)
 static void spawn_process(char **argv)
 {
     ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+
+	/* Stop before doing anything, giving parent a chance to catch the exec: */
+    kill(getpid(), SIGSTOP);
+
     execve(argv[0], argv, environ);
 
     // execve only returns on failure
@@ -134,26 +146,78 @@ static void spawn_process(char **argv)
     exit(1);
 }
 
-static int detect_crash(pid_t pid)
+static estat_t status_type(int status)
 {
+    if (WIFSTOPPED(status)) {
+        // Process crashed!
+        if (WSTOPSIG(status) == SIGSEGV)
+            return CRASHED;
+
+        // Syscall trace
+        if (WSTOPSIG(status) & 0x80)
+            return SYSCALL;
+    }
+
+    // Process exited
+    if (WIFEXITED(status))
+        return EXITED;
+
+    return UNKNOWN;
+}
+
+static int handle_syscall(pid_t pid, int entry)
+{
+    struct syshooks *pop;
+    struct user_regs_struct regs;
+    size_t i;
+
+    memset(&regs, '\0', sizeof(regs));
+    ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+	printf("rax; %llx\n", regs.rax);
+    pop = _hookops;
+    for (i = 0; i < sizeof(_hookops) / sizeof(*pop); i++) {
+        if (entry && regs.rax == pop->sysnum) {
+            printf("derp\n");
+            regs.rip = (uint64_t)pop->callback;
+            ptrace(PTRACE_SETREGS, pid, NULL, &regs);
+        }
+    };
+
+    return 0;
+}
+
+static int monitor_execution(pid_t pid)
+{
+    int isentry = 1;
     int ret = 1;
-    int status;
+    int status, st;
+
+    waitpid(pid, &status, 0);
+    ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD);
     while (_continue) {
+        ptrace(PTRACE_SYSCALL, pid, 0, 0);
         waitpid(pid, &status, 0);
 
-        // Process crashed!
-        if (WIFSTOPPED(status)) {
-            if (WSTOPSIG(status) == SIGSEGV) {
-                ret = 0;
-                break;
-            }
-
-            ptrace(PTRACE_CONT, pid, 0, 0);
+        st = status_type(status);
+        if (st == CRASHED) {
+            info("Debuggee crashed!");
+            return 0;
         }
 
-        // Process exited
-        if (WIFEXITED(status))
-            break;
+        if (st == EXITED) {
+            info("Debuggee exited");
+            return 1;
+        }
+
+        if (st == SYSCALL) {
+            display_crash_dump(pid);
+            handle_syscall(pid, isentry);
+        }
+
+        if (isentry)
+            isentry = 0;
+        else
+            isentry = 1;
     }
 
     return ret;
@@ -174,7 +238,8 @@ int main(int argc, char **argv)
         // This won't return
         spawn_process(&argv[1]);
     } else {
-        if (!detect_crash(pid)) {
+        ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD);
+        if (!monitor_execution(pid)) {
             info("Fuzzed process has crashed with SIGSEGV");
             display_crash_dump(pid);
         }
