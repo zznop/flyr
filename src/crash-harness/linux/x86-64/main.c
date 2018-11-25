@@ -12,8 +12,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
-#include <sys/ptrace.h>
 #include <sys/user.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -27,7 +25,7 @@
 
 extern char **environ;
 static bool _continue = 1;
-struct syshooks _hookops[] = {
+struct syshooks _syscall_hooks[] = {
     {
         .sysnum = __NR_mmap,
         .callback = &mmap_hook
@@ -89,7 +87,13 @@ static void dump_reg_memory(pid_t pid, uint64_t addr)
 static void display_crash_dump(pid_t pid)
 {
     struct user_regs_struct regs;
-    ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+    struct iovec iov;
+
+	memset(&regs, 0, sizeof(regs));
+	iov.iov_len = sizeof(regs);
+	iov.iov_base = &regs;
+
+    ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, &iov);
     dump_elf_base(pid, regs.rip);
     printf("rax    : %016llx", regs.rax);
     dump_reg_memory(pid, regs.rax);
@@ -135,10 +139,7 @@ static void display_crash_dump(pid_t pid)
 static void spawn_process(char **argv)
 {
     ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-
-	/* Stop before doing anything, giving parent a chance to catch the exec: */
     kill(getpid(), SIGSTOP);
-
     execve(argv[0], argv, environ);
 
     // execve only returns on failure
@@ -167,19 +168,23 @@ static estat_t status_type(int status)
 
 static int handle_syscall(pid_t pid, int entry)
 {
-    struct syshooks *pop;
-    struct user_regs_struct regs;
+    struct syshooks *phook;
     size_t i;
+    struct iovec iov;
+    struct user_regs_struct curr_regs;
 
-    memset(&regs, '\0', sizeof(regs));
-    ptrace(PTRACE_GETREGS, pid, NULL, &regs);
-	printf("rax; %llx\n", regs.rax);
-    pop = _hookops;
-    for (i = 0; i < sizeof(_hookops) / sizeof(*pop); i++) {
-        if (entry && regs.rax == pop->sysnum) {
-            printf("derp\n");
-            regs.rip = (uint64_t)pop->callback;
-            ptrace(PTRACE_SETREGS, pid, NULL, &regs);
+    if (!entry)
+        return 0;
+
+    memset(&curr_regs, 0, sizeof(curr_regs));
+    iov.iov_len = sizeof(curr_regs);
+    iov.iov_base = &curr_regs;
+    ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, &iov);
+
+    phook = _syscall_hooks;
+    for (i = 0; i < sizeof(_syscall_hooks) / sizeof(*phook); i++) {
+        if (curr_regs.orig_rax == phook->sysnum) {
+            phook->callback(pid, &curr_regs);
         }
     };
 
@@ -210,7 +215,7 @@ static int monitor_execution(pid_t pid)
         }
 
         if (st == SYSCALL) {
-            display_crash_dump(pid);
+            //display_crash_dump(pid);
             handle_syscall(pid, isentry);
         }
 
