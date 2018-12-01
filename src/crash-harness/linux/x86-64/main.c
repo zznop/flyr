@@ -138,9 +138,30 @@ static void display_crash_dump(pid_t pid)
 
 static void spawn_process(char **argv)
 {
+    char **env = NULL;
+    char *preload_env = "LD_PRELOAD=./build/debug/hook/libflyr-hook.so";
+    size_t i = 0;
+
+    // Get count
+    while (environ[i] != NULL)
+        i++;
+
+    env = (char **)malloc(i * sizeof(char *));
+
+    // Copy the environment variables
+    i = 0;
+    while (environ[i] != NULL) {
+        env[i] = environ[i];
+        i++;
+    }
+
+    // Append LD_PRELOAD
+    env[i] = preload_env;
+    env[i + 1] = NULL;
+
     ptrace(PTRACE_TRACEME, 0, NULL, NULL);
     kill(getpid(), SIGSTOP);
-    execve(argv[0], argv, environ);
+    execve(argv[0], argv, env);
 
     // execve only returns on failure
     err("Failed to execute binary");

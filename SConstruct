@@ -40,6 +40,13 @@ for env in envs:
         exports='env',
     )
 
+    hook_lib = SConscript(
+        './src/crash-harness/linux/x86-64/lib/SConscript',
+        variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/hook",
+        duplicate=False,
+        exports='env',
+    )
+
     flyr_crash = SConscript(
         './src/crash-harness/linux/x86-64/SConscript',
         variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/crash",

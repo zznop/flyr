@@ -1,12 +1,10 @@
 Import('env')
 
-
 crash_env = env.Clone()
 
 crash_env.AppendUnique(
     CPPDEFINES="_GNU_SOURCE",
 );
-
 
 sources = [
     'hooks.c',

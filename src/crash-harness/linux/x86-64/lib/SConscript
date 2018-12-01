@@ -1,0 +1,16 @@
+Import('env')
+
+hook_lib_env = env.Clone()
+hook_lib_env.AppendUnique(
+    LIBS = ["dl"],
+)
+
+sources = [
+    'libc_hooks.c',
+    'utils.c',
+]
+
+hook_lib = hook_lib_env.SharedLibrary(
+    'flyr-hook.so',
+    source = sources,
+)
