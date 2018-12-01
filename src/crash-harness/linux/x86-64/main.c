@@ -174,10 +174,6 @@ static estat_t status_type(int status)
         // Process crashed!
         if (WSTOPSIG(status) == SIGSEGV)
             return CRASHED;
-
-        // Syscall trace
-        if (WSTOPSIG(status) & 0x80)
-            return SYSCALL;
     }
 
     // Process exited
@@ -187,41 +183,14 @@ static estat_t status_type(int status)
     return UNKNOWN;
 }
 
-static int handle_syscall(pid_t pid, int entry)
-{
-    struct syshooks *phook;
-    size_t i;
-    struct iovec iov;
-    struct user_regs_struct curr_regs;
-
-    if (!entry)
-        return 0;
-
-    memset(&curr_regs, 0, sizeof(curr_regs));
-    iov.iov_len = sizeof(curr_regs);
-    iov.iov_base = &curr_regs;
-    ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, &iov);
-
-    phook = _syscall_hooks;
-    for (i = 0; i < sizeof(_syscall_hooks) / sizeof(*phook); i++) {
-        if (curr_regs.orig_rax == phook->sysnum) {
-            phook->callback(pid, &curr_regs);
-        }
-    };
-
-    return 0;
-}
-
 static int monitor_execution(pid_t pid)
 {
-    int isentry = 1;
     int ret = 1;
     int status, st;
 
-    waitpid(pid, &status, 0);
-    ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD);
+	waitpid(pid, &status, 0);
     while (_continue) {
-        ptrace(PTRACE_SYSCALL, pid, 0, 0);
+        ptrace(PTRACE_CONT, pid, 0, 0);
         waitpid(pid, &status, 0);
 
         st = status_type(status);
@@ -234,16 +203,6 @@ static int monitor_execution(pid_t pid)
             info("Debuggee exited");
             return 1;
         }
-
-        if (st == SYSCALL) {
-            //display_crash_dump(pid);
-            handle_syscall(pid, isentry);
-        }
-
-        if (isentry)
-            isentry = 0;
-        else
-            isentry = 1;
     }
 
     return ret;
@@ -264,7 +223,6 @@ int main(int argc, char **argv)
         // This won't return
         spawn_process(&argv[1]);
     } else {
-        ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD);
         if (!monitor_execution(pid)) {
             info("Fuzzed process has crashed with SIGSEGV");
             display_crash_dump(pid);

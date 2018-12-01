@@ -2,34 +2,46 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <stdint.h>
-#include "libc_hooks.h"
-#include "utils.h"
+#include <pthread.h>
 
-#define TAG_VAL 0x666C7972666C7972
+#define TAG_VAL 0x666C7972666C7972UL
+#define LIBC_PATH "/lib/x86_64-linux-gnu/libc.so.6"
 #define __debug_break() __asm__ volatile("int $0x03");
 
-#define FAILHARD(msg) \
-    err(msg); \
+#define FAIL() \
     exit(1);
 
 typedef uint64_t tag_t;
 typedef void *(*malloc_t)(size_t size);
+typedef void (*free_t)(void *ptr);
 
-void *_libc = NULL;
-int _is_initialized = 0;
+/**
+ * Decrement the pointer before the tag so we can free at the correct pointer
+ */
+void free(void *ptr)
+{
+    free_t free_real;
 
+    free_real = (free_t)dlsym(RTLD_NEXT, "free");
+    if (!free_real)
+        FAIL();
+
+    free_real(ptr - sizeof(tag_t));
+}
+
+/**
+ * Allocate buffer and prepend/append tags for OOB write detection
+ */
 void *malloc(size_t size)
 {
     malloc_t malloc_real; 
     size_t new_size;
     uint8_t *ptr;
 
-    __debug_break();
-    sleep(10);
-    malloc_real = (malloc_t)dlsym(_libc, "malloc");
+    malloc_real = (malloc_t)dlsym(RTLD_NEXT, "malloc");
     if (!malloc_real)
-        FAILHARD("Failed to locate real malloc");
-
+        FAIL();
+  
     new_size = size + sizeof(tag_t) * 2;
     ptr = malloc_real(new_size);
     if (!ptr)
@@ -38,14 +50,4 @@ void *malloc(size_t size)
     *(uint64_t *)ptr = TAG_VAL;
     *(uint64_t *)(ptr + new_size - sizeof(tag_t)) = TAG_VAL;
     return ptr + sizeof(tag_t);
-}
-
-static void __attribute__((constructor)) init(void)
-{
-    _libc = dlopen(LIBC_PATH, RTLD_LAZY);
-    if (!_libc) {
-        FAILHARD("Failed to dlopen() libc");
-    } else {
-        _is_initialized = 1;
-    }
 }
