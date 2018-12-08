@@ -47,7 +47,6 @@ static int init_crash_harness(void)
     }
 
     total_nb = 0;
-    printf("%i\n", _hook_library_size);
     while (nb > 0) {
         nb = fwrite(_hook_library, 1, _hook_library_size, hook_lib_file);
         total_nb += nb;
