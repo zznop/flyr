@@ -16,6 +16,7 @@
 
 typedef uint64_t tag_t;
 typedef void *(*malloc_t)(size_t size);
+typedef void *(*calloc_t)(size_t num, size_t size);
 typedef void (*free_t)(void *ptr);
 typedef void *(*memcpy_t)(void *destination, const void *source, size_t num);
 typedef int (*printf_t)(const char *format, ...);
@@ -38,7 +39,17 @@ struct alloc_info {
  * Globals
  */
 
-struct alloc_info *_tagged_allocs;
+static struct alloc_info *_tagged_allocs;
+static malloc_t _malloc_real = NULL;
+
+static void initialize()
+{
+    if (!_malloc_real) {
+        _malloc_real = (malloc_t)dlsym(RTLD_NEXT, "malloc");
+        if (!_malloc_real)
+            FAIL();
+    }
+}
 
 /**
  * Debug print
@@ -150,7 +161,7 @@ static void check_tagged_allocs(void)
 }
 
 /**
- * Check for OOB writes
+ *  libc:memcpy hook for OOB write detection
  */
 void *memcpy (void *destination, const void *source, size_t num)
 {
@@ -168,7 +179,7 @@ void *memcpy (void *destination, const void *source, size_t num)
 }
 
 /**
- * Hook free to prevent crashes while freeing tagged allocations
+ * libc:free hook for OOB write detection
  */
 void free(void *ptr)
 {
@@ -180,7 +191,8 @@ void free(void *ptr)
         FAIL();
 
     if (is_tagged_allocation(ptr - sizeof(tag_t))) {
-        free_real(ptr - sizeof(tag_t));
+        ptr = ptr - sizeof(tag_t);
+        free_real(ptr);
         pop_alloc(ptr, free_real);
     } else {
         free_real(ptr);
@@ -188,22 +200,55 @@ void free(void *ptr)
 }
 
 /**
- * Allocate buffer and prepend/append tags for OOB write detection
+ * libc:calloc hook - tag allocations
  */
-void *malloc(size_t size)
+void *calloc(size_t num, size_t size)
 {
-    malloc_t malloc_real; 
+    calloc_t calloc_real;
     size_t new_size;
     uint8_t *ptr;
     struct alloc_info *alloc;
 
-    malloc_real = (malloc_t)dlsym(RTLD_NEXT, "malloc");
-    if (!malloc_real)
+    initialize();
+    check_tagged_allocs();
+
+    calloc_real = (calloc_t)dlsym(RTLD_NEXT, "calloc");
+    if (!calloc_real)
         FAIL();
-  
+
+    new_size = num * size + sizeof(tag_t) * 2;
+    ptr = calloc_real(new_size, 1);
+    if (!ptr)
+        return NULL;
+
+    *(uint64_t *)ptr = TAG_VAL;
+    *(uint64_t *)(ptr + new_size - sizeof(tag_t)) = TAG_VAL;
+
+    alloc = _malloc_real(sizeof(*alloc));
+    if (!alloc)
+        FAIL();
+
+    alloc->base = ptr;
+    alloc->size = new_size;
+    alloc->next = NULL;
+    push_alloc(alloc);
+
+    return ptr + sizeof(tag_t);
+}
+
+/**
+ * lic:malloc hook - tag allocations
+ */
+void *malloc(size_t size)
+{
+    size_t new_size;
+    uint8_t *ptr;
+    struct alloc_info *alloc;
+
+    initialize();
     check_tagged_allocs();
     new_size = size + sizeof(tag_t) * 2;
-    ptr = malloc_real(new_size);
+    ptr = _malloc_real(new_size);
     if (!ptr)
         return NULL;
 
@@ -212,7 +257,7 @@ void *malloc(size_t size)
     *(uint64_t *)(ptr + new_size - sizeof(tag_t)) = TAG_VAL;
 
     // Cache the allocation info
-    alloc = malloc_real(sizeof(*alloc));
+    alloc = _malloc_real(sizeof(*alloc));
     if (!alloc)
         FAIL();
 
