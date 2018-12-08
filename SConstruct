@@ -16,7 +16,10 @@ debug_env = base_env.Clone()
 debug_env.Append(
     MODE = 'debug',
     CCFLAGS = [
-        '-ggdb3',
+        '-ggdb3'
+    ],
+    CPPDEFINES = [
+        'DEBUG',
     ],
 )
 
@@ -33,21 +36,14 @@ release_env.Append(
 envs.append(release_env)
 
 for env in envs:
-    flyr = SConscript(
+    env.SConscript(
         './src/core/SConscript',
         variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/core",
         duplicate=False,
         exports='env',
     )
 
-    hook_lib = SConscript(
-        './src/crash-harness/linux/x86-64/lib/SConscript',
-        variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/hook",
-        duplicate=False,
-        exports='env',
-    )
-
-    flyr_crash = SConscript(
+    env.SConscript(
         './src/crash-harness/linux/x86-64/SConscript',
         variant_dir=env['BUILDROOT'] + "/" + env["MODE"] + "/crash",
         duplicate=False,

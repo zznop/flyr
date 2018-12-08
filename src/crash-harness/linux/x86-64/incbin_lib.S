@@ -2,7 +2,11 @@
 .globl _hook_library_size
 
 _hook_library:
-    .incbin "./build/debug/hook/libflyr-hook.so"
+#ifdef DEBUG
+    .incbin "./build/debug/crash/libflyr-hook.so"
+#else
+    .incbin "./build/release/crash/libflyr-hook.so"
+#endif
 
 _hook_library_size:
    .int _hook_library_size - _hook_library

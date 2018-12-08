@@ -1,5 +1,21 @@
 Import('env')
 
+# Build the LD_PRELOAD'd library
+
+hook_lib_env = env.Clone()
+hook_lib_env.AppendUnique(
+    LIBS = ["dl", "pthread"],
+    CPPDEFINES = "_GNU_SOURCE",
+)
+
+hook_lib = hook_lib_env.SharedLibrary(
+    'flyr-hook.so',
+    source=['lib/libc_hooks.c',],
+)
+
+
+# Build the harness
+
 crash_env = env.Clone()
 
 crash_env.AppendUnique(
@@ -8,11 +24,14 @@ crash_env.AppendUnique(
     ]
 );
 
+incbin_lib_o = env.Object('incbin_lib.S')
+env.Depends(incbin_lib_o, hook_lib)
+
 sources = [
     'hooks.c',
     'main.c',
     'utils.c',
-    'incbin_lib.S',
+    incbin_lib_o,
 ]
 
 flyr_crash = crash_env.Program(
