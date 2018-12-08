@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/user.h>
+#include <sys/stat.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <errno.h>
@@ -22,8 +23,12 @@
 #include "hooks.h"
 
 #define ELF_MAGIC 0x464c457f
+#define HOOK_LIB_PATH "/tmp/libflyr-hook.so"
 
 extern char **environ;
+extern uint8_t _hook_library[0];
+extern int _hook_library_size;
+
 static bool _continue = 1;
 struct syshooks _syscall_hooks[] = {
     {
@@ -32,6 +37,33 @@ struct syshooks _syscall_hooks[] = {
     }
 };
 
+static int init_crash_harness(void)
+{
+    int nb, total_nb;
+    FILE *hook_lib_file = fopen(HOOK_LIB_PATH, "wb");
+    if (!hook_lib_file) {
+        err("Failed to initialize crash harness\n");
+        return FAILURE;
+    }
+
+    total_nb = 0;
+    printf("%i\n", _hook_library_size);
+    while (nb > 0) {
+        nb = fwrite(_hook_library, 1, _hook_library_size, hook_lib_file);
+        total_nb += nb;
+        if (total_nb == _hook_library_size)
+            break;
+    }
+
+    if (total_nb != _hook_library_size) {
+        err("Failed to write hook library to tmp directory\n");
+        return FAILURE;
+    }
+
+    fclose(hook_lib_file);
+    chmod(HOOK_LIB_PATH, 0700);
+    return SUCCESS;
+}
 
 static void dump_elf_base(pid_t pid, uint64_t addr)
 {
@@ -139,8 +171,11 @@ static void display_crash_dump(pid_t pid)
 static void spawn_process(char **argv)
 {
     char **env = NULL;
-    char *preload_env = "LD_PRELOAD=./build/debug/hook/libflyr-hook.so";
+    char preload_env[256];
     size_t i = 0;
+
+    memset(preload_env, '\0', sizeof(preload_env));
+    snprintf(preload_env, sizeof(preload_env), "LD_PRELOAD=%s", HOOK_LIB_PATH);
 
     // Get count
     while (environ[i] != NULL)
@@ -218,6 +253,10 @@ int main(int argc, char **argv)
         goto done;
     }
 
+    if (init_crash_harness()) {
+        goto done;
+    }
+
     pid = fork();
     if (!pid) {
         // This won't return
@@ -230,6 +269,8 @@ int main(int argc, char **argv)
 
         ptrace(PTRACE_DETACH, pid, 0, 0);
     }
+
+    ret = SUCCESS;
 done:
     return ret;
 }

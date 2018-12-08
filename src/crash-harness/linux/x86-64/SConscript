@@ -3,13 +3,16 @@ Import('env')
 crash_env = env.Clone()
 
 crash_env.AppendUnique(
-    CPPDEFINES="_GNU_SOURCE",
+    CPPDEFINES = [
+        "_GNU_SOURCE",
+    ]
 );
 
 sources = [
     'hooks.c',
     'main.c',
     'utils.c',
+    'incbin_lib.S',
 ]
 
 flyr_crash = crash_env.Program(

@@ -22,7 +22,6 @@ typedef int (*printf_t)(const char *format, ...);
 typedef int (*vsnprintf_t)(char *s, size_t n, const char *format, va_list arg);
 
 #define TAG_VAL 0x666C7972666C7972UL
-#define LIBC_PATH "/lib/x86_64-linux-gnu/libc.so.6"
 #define BUG() __asm__ volatile(".int 0xdeadc0de");
 #define LOG_BUF_SIZE (256)
 
@@ -44,7 +43,7 @@ struct alloc_info *_tagged_allocs;
 /**
  * Debug print
  */
-void info(const char *fmt, ...)
+static void info(const char *fmt, ...)
 {
     va_list ap;
     char buf[LOG_BUF_SIZE];
@@ -60,7 +59,7 @@ void info(const char *fmt, ...)
 /**
  * Lookup if an allocation is tagged, or not
  */
-int is_tagged_allocation(void *ptr)
+static int is_tagged_allocation(void *ptr)
 {
     struct alloc_info *curr;
     curr = _tagged_allocs;
@@ -77,7 +76,7 @@ int is_tagged_allocation(void *ptr)
 /**
  * Push a tagged allocation to the end of the linked list
  */
-void push_alloc(struct alloc_info *alloc)
+static void push_alloc(struct alloc_info *alloc)
 {
     struct alloc_info *curr;
     if (!_tagged_allocs) {
@@ -95,7 +94,7 @@ void push_alloc(struct alloc_info *alloc)
 /**
  * Remove a free'd allocation from the tagged allocation list
  */
-void pop_alloc(void *ptr, free_t free_real)
+static void pop_alloc(void *ptr, free_t free_real)
 {
     struct alloc_info *curr, *prev;
    
@@ -182,6 +181,7 @@ void free(void *ptr)
 
     if (is_tagged_allocation(ptr - sizeof(tag_t))) {
         free_real(ptr - sizeof(tag_t));
+        pop_alloc(ptr, free_real);
     } else {
         free_real(ptr);
     }
