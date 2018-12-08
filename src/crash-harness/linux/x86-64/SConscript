@@ -28,7 +28,6 @@ incbin_lib_o = env.Object('incbin_lib.S')
 env.Depends(incbin_lib_o, hook_lib)
 
 sources = [
-    'hooks.c',
     'main.c',
     'utils.c',
     incbin_lib_o,

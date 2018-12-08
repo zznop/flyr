@@ -19,8 +19,11 @@
 #include <errno.h>
 #include <ctype.h>
 #include <signal.h>
+#include <sys/ptrace.h>
+#include <unistd.h>
+#include <elf.h>
+#include <sys/uio.h>
 #include "utils.h"
-#include "hooks.h"
 
 #define ELF_MAGIC 0x464c457f
 #define HOOK_LIB_PATH "/tmp/libflyr-hook.so"
@@ -28,14 +31,13 @@
 extern char **environ;
 extern uint8_t _hook_library[0];
 extern int _hook_library_size;
-
 static bool _continue = 1;
-struct syshooks _syscall_hooks[] = {
-    {
-        .sysnum = __NR_mmap,
-        .callback = &mmap_hook
-    }
-};
+
+typedef enum {
+    EXITED = 0,
+    CRASHED,
+    UNKNOWN
+} estat_t;
 
 static int init_crash_harness(void)
 {
