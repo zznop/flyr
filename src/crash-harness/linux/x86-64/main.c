@@ -122,9 +122,9 @@ static void display_crash_dump(pid_t pid)
     struct user_regs_struct regs;
     struct iovec iov;
 
-	memset(&regs, 0, sizeof(regs));
-	iov.iov_len = sizeof(regs);
-	iov.iov_base = &regs;
+    memset(&regs, 0, sizeof(regs));
+    iov.iov_len = sizeof(regs);
+    iov.iov_base = &regs;
 
     ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, &iov);
     dump_elf_base(pid, regs.rip);
@@ -224,7 +224,7 @@ static int monitor_execution(pid_t pid)
     int ret = 1;
     int status, st;
 
-	waitpid(pid, &status, 0);
+    waitpid(pid, &status, 0);
     while (_continue) {
         ptrace(PTRACE_CONT, pid, 0, 0);
         waitpid(pid, &status, 0);

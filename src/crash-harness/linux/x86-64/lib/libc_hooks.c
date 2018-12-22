@@ -11,12 +11,12 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <stdint.h>
-#include <pthread.h>
 #include <stdarg.h>
 
 typedef uint64_t tag_t;
 typedef void *(*malloc_t)(size_t size);
 typedef void *(*calloc_t)(size_t num, size_t size);
+typedef void *(*realloc_t)(void *ptr, size_t new_size);
 typedef void (*free_t)(void *ptr);
 typedef void *(*memcpy_t)(void *destination, const void *source, size_t num);
 typedef int (*printf_t)(const char *format, ...);
@@ -39,8 +39,11 @@ struct alloc_info {
  * Globals
  */
 
-static struct alloc_info *_tagged_allocs;
+static struct alloc_info *_tagged_allocs = NULL;
 static malloc_t _malloc_real = NULL;
+static calloc_t _calloc_real = NULL;
+static free_t _free_real = NULL;
+static uint8_t _dlsym_tmp_buffer[8192];
 
 static void initialize()
 {
@@ -49,6 +52,26 @@ static void initialize()
         if (!_malloc_real)
             FAIL();
     }
+
+    if (!_calloc_real) {
+        _calloc_real = (calloc_t)dlsym(RTLD_NEXT, "calloc");
+        if (!_calloc_real)
+            FAIL();
+    }
+
+    if (!_free_real) {
+        _free_real = (free_t)dlsym(RTLD_NEXT, "free");
+        if (!_free_real)
+            FAIL();
+    }
+}
+
+/**
+ * Runs on load
+ */
+void __attribute__((constructor)) init(void)
+{
+    initialize();
 }
 
 /**
@@ -90,6 +113,7 @@ static int is_tagged_allocation(void *ptr)
 static void push_alloc(struct alloc_info *alloc)
 {
     struct alloc_info *curr;
+
     if (!_tagged_allocs) {
         _tagged_allocs = alloc;
         return;
@@ -105,10 +129,10 @@ static void push_alloc(struct alloc_info *alloc)
 /**
  * Remove a free'd allocation from the tagged allocation list
  */
-static void pop_alloc(void *ptr, free_t free_real)
+static void pop_alloc(void *ptr)
 {
     struct alloc_info *curr, *prev;
-   
+
     curr = _tagged_allocs;
     while (curr != NULL) {
         if (curr->base != ptr)
@@ -124,12 +148,12 @@ static void pop_alloc(void *ptr, free_t free_real)
             else
                 _tagged_allocs = NULL;
 
-            free_real(curr);
+            _free_real(curr);
             break;
         }
 
         prev->next = curr->next;
-        free_real(curr);
+        _free_real(curr);
         break;
 next:
         prev = curr;
@@ -168,7 +192,9 @@ void *memcpy (void *destination, const void *source, size_t num)
     void *ret;
     memcpy_t memcpy_real;
 
+    initialize();
     check_tagged_allocs();
+
     memcpy_real = (memcpy_t)dlsym(RTLD_NEXT, "memcpy");
     if (!memcpy_real)
         FAIL();
@@ -183,19 +209,18 @@ void *memcpy (void *destination, const void *source, size_t num)
  */
 void free(void *ptr)
 {
-    free_t free_real;
-
+    initialize();
     check_tagged_allocs();
-    free_real = (free_t)dlsym(RTLD_NEXT, "free");
-    if (!free_real)
-        FAIL();
+
+    if (!_free_real)
+        return;
 
     if (is_tagged_allocation(ptr - sizeof(tag_t))) {
         ptr = ptr - sizeof(tag_t);
-        free_real(ptr);
-        pop_alloc(ptr, free_real);
+        _free_real(ptr);
+        pop_alloc(ptr);
     } else {
-        free_real(ptr);
+        _free_real(ptr);
     }
 }
 
@@ -204,26 +229,71 @@ void free(void *ptr)
  */
 void *calloc(size_t num, size_t size)
 {
-    calloc_t calloc_real;
-    size_t new_size;
+    size_t new_size, i;
     uint8_t *ptr;
     struct alloc_info *alloc;
+
+    if (!_calloc_real) {
+        // Ghetto calloc ¯\_(ツ)_/¯
+        for (i = 0 ;i < sizeof(_dlsym_tmp_buffer); i++)
+            _dlsym_tmp_buffer[i] = 0;
+
+        return _dlsym_tmp_buffer;
+    }
 
     initialize();
     check_tagged_allocs();
 
-    calloc_real = (calloc_t)dlsym(RTLD_NEXT, "calloc");
-    if (!calloc_real)
-        FAIL();
-
     new_size = num * size + sizeof(tag_t) * 2;
-    ptr = calloc_real(new_size, 1);
+    ptr = _calloc_real(new_size, 1);
     if (!ptr)
         return NULL;
 
     *(uint64_t *)ptr = TAG_VAL;
     *(uint64_t *)(ptr + new_size - sizeof(tag_t)) = TAG_VAL;
 
+    alloc = _malloc_real(sizeof(*alloc));
+    if (!alloc)
+        FAIL();
+
+    alloc->base = ptr;
+    alloc->size = new_size;
+    alloc->next = NULL;
+    push_alloc(alloc);
+
+    return ptr + sizeof(tag_t);
+}
+
+/**
+ * lic:realloc hook
+ */
+void *realloc(void *ptr, size_t new_size)
+{
+    struct alloc_info *alloc;
+    realloc_t realloc_real;
+
+    initialize();
+    check_tagged_allocs();
+
+    realloc_real = (realloc_t)dlsym(RTLD_NEXT, "realloc");
+    if (!realloc_real)
+        FAIL();
+
+    if (is_tagged_allocation(ptr - sizeof(tag_t))) {
+        ptr = ptr - sizeof(tag_t);
+        pop_alloc(ptr);
+    }
+
+    new_size = new_size + sizeof(tag_t) * 2;
+    ptr = realloc_real(ptr, new_size);
+    if (!ptr)
+        return ptr;
+
+    // Apply the tags
+    *(uint64_t *)ptr = TAG_VAL;
+    *(uint64_t *)(ptr + new_size - sizeof(tag_t)) = TAG_VAL;
+
+    // Cache the allocation info
     alloc = _malloc_real(sizeof(*alloc));
     if (!alloc)
         FAIL();
@@ -247,6 +317,7 @@ void *malloc(size_t size)
 
     initialize();
     check_tagged_allocs();
+
     new_size = size + sizeof(tag_t) * 2;
     ptr = _malloc_real(new_size);
     if (!ptr)
